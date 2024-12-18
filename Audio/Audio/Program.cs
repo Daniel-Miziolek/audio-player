@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using NAudio.Wave;
 using System.Threading.Tasks;
+using Spectre.Console;
 
 namespace Audio
 {
@@ -17,8 +18,34 @@ namespace Audio
 
                 for (int i = 0; i < folderWithAudios.Length; i++)
                 {
-                    Console.WriteLine($"Index: {i}     Name of the music: {Path.GetFileName(folderWithAudios[i])}");
+                    var musicPanel = new Panel($"Index: {i}  Name of the music: {Path.GetFileName(folderWithAudios[i])}")
+                    {
+                        Border = BoxBorder.Rounded,
+                        Width = 60,
+                        Padding = new Padding(1, 0, 1, 0)
+                    };
+                    
+                    AnsiConsole.Write(
+                        new Panel(
+                            new Rows( 
+                                folderWithAudios
+                                    .Select((audio, index) =>
+                                        new Panel($"Index: {index}  Name of the music: {Path.GetFileName(audio)}")
+                                        {
+                                            Border = BoxBorder.Rounded,
+                                            Width = 60,
+                                        })
+                                    .ToArray()
+                            )
+                        )
+                        .Border(BoxBorder.Double) 
+                        .Header(" Imported Music ")
+                        .Padding(1, 0, 1, 0)
+                    );
+
+                    break; 
                 }
+
 
                 Console.Write("Enter index of music, you want to play: ");
                 if (!int.TryParse(Console.ReadLine(), out int input) || input < 0 || input >= folderWithAudios.Length)
