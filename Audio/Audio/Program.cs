@@ -1,8 +1,5 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
+﻿using System.Diagnostics;
 using NAudio.Wave;
-using System.Threading.Tasks;
 using Spectre.Console;
 
 namespace Audio
@@ -13,6 +10,7 @@ namespace Audio
         {
             string path = @"C:\Users\Daniel\Desktop\Audio";
             List<string> folderWithAudios = Directory.GetFileSystemEntries(path).ToList();
+            Dictionary<string, List<string>> playlist = new Dictionary<string, List<string>>();
 
             while (true)
             {                
@@ -59,7 +57,7 @@ namespace Audio
                         PlayMusic(folderWithAudios, index);
                         break;
                     case "3":
-                        Console.WriteLine("Create playlist");
+                        CreatePlaylist(folderWithAudios, playlist);
                         break;
                     case "4":
                         Console.WriteLine("Are you sure you want to exit? [y,n]");
@@ -74,6 +72,45 @@ namespace Audio
                         continue;
                 }
             }
+        }
+
+        static void CreatePlaylist(List<string> folderWithAudios, Dictionary<string, List<string>> playLists)
+        {
+            Console.Write("Enter a name of playlist: ");
+            string nameOfPlaylist = Console.ReadLine();
+            AnsiConsole.MarkupLine($"[green]Create a playlist {nameOfPlaylist}[/]");
+            List<string> musicToAdd = new List<string>();
+            while (true)
+            {
+                var musicToAdd2 = AnsiConsole.Prompt<string>(
+                    new SelectionPrompt<string>()
+                        .Title("Choose musics to add")
+                        .PageSize(10)
+                        .MoreChoicesText("[grey](Move up and down to reveal more musics)[/]")
+                        .AddChoices(folderWithAudios));
+                musicToAdd.Add(musicToAdd2);
+                AnsiConsole.WriteLine($"Music: {musicToAdd} added to your playlist: {nameOfPlaylist}!");
+                Console.WriteLine("Are you want to add more music [y,n]");
+                string yesOrNo = Console.ReadLine();
+                if (yesOrNo == "y")
+                {
+                    
+                }
+                else if (yesOrNo == "n")
+                {
+                    break;
+                }
+                
+            }
+
+            Console.WriteLine($"Your created plalist has name: {nameOfPlaylist} and music: ");
+            for (int i = 0; i < musicToAdd.Count; i++)
+            {
+                Console.WriteLine(musicToAdd[i]);
+            }
+            Console.ReadKey();
+            Console.Clear();
+        
         }
 
         static void ImportMusic(List<string> folderWithAudios)
@@ -93,7 +130,7 @@ namespace Audio
                     var selectedMusicOrFolder = AnsiConsole.Prompt(
                         new SelectionPrompt<string>()
                             .Title("Choose music to import")
-                            .PageSize(10)
+                            .PageSize(10) // Rozwiązanie w SpectreConsoleTest oraz problem z  page size!
                             .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
                             .AddChoices(entries));                            
 
