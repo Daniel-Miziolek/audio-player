@@ -10,10 +10,10 @@ namespace Audio
         {
             string path = @"C:\Users\Daniel\Desktop\Audio";
             List<string> folderWithAudios = Directory.GetFileSystemEntries(path).ToList();
-            Dictionary<string, List<string>> playlist = new Dictionary<string, List<string>>();
+            Dictionary<string, List<string>> playlists = new Dictionary<string, List<string>>();
 
             while (true)
-            {                
+            {
                 AnsiConsole.Write(
                     new Panel(
                         new Rows(
@@ -28,14 +28,15 @@ namespace Audio
                         )
                     )
                     .Border(BoxBorder.Double)
-                    .Header(" Imported Music ")
+                    .Header("[yellow]Imported Music[/]")
                     .Padding(1, 0, 1, 0)
                 );
 
                 Console.WriteLine("1. Import music");
                 Console.WriteLine("2. Play music");
                 Console.WriteLine("3. Create playlist");
-                Console.WriteLine("4. Exit");
+                Console.WriteLine("4. Display playlists");
+                Console.WriteLine("5. Exit");
                 Console.Write("Enter your choice: ");
 
                 string input = Console.ReadLine();
@@ -57,14 +58,21 @@ namespace Audio
                         PlayMusic(folderWithAudios, index);
                         break;
                     case "3":
-                        CreatePlaylist(folderWithAudios, playlist);
+                        CreatePlaylist(folderWithAudios, playlists);
                         break;
                     case "4":
+                        Console.Clear();
+                        DisplayPlaylists(playlists);
+                        Console.WriteLine("Press any key to return to the menu...");
+                        Console.ReadKey();
+                        Console.Clear();
+                        break;
+                    case "5":
                         Console.WriteLine("Are you sure you want to exit? [y,n]");
                         string yesOrNo = Console.ReadLine();
                         if (yesOrNo.ToLower() == "y") return;
                         Console.Clear();
-                        break;
+                        break;                    
                     default:
                         Console.WriteLine("Invalid choice. Press any key to try again");
                         Console.ReadKey();
@@ -74,65 +82,69 @@ namespace Audio
             }
         }
 
-        static void CreatePlaylist(List<string> folderWithAudios, Dictionary<string, List<string>> playLists)
+        static void CreatePlaylist(List<string> folderWithAudios, Dictionary<string, List<string>> playlists)
         {
-            Console.Write("Enter a name of playlist: ");
+            Console.Write("Enter a name for the playlist: ");
             string nameOfPlaylist = Console.ReadLine();
-            AnsiConsole.MarkupLine($"[green]Create a playlist {nameOfPlaylist}[/]");
-            List<string> musicToAdd = new List<string>();
-            while (true)
+
+            if (string.IsNullOrWhiteSpace(nameOfPlaylist) || playlists.ContainsKey(nameOfPlaylist))
             {
-                var musicToAdd2 = AnsiConsole.Prompt<string>(
-                    new SelectionPrompt<string>()
-                        .Title("Choose musics to add")
-                        .PageSize(10)
-                        .MoreChoicesText("[grey](Move up and down to reveal more musics)[/]")
-                        .AddChoices(folderWithAudios));
-                musicToAdd.Add(musicToAdd2);
-                AnsiConsole.WriteLine($"Music: {musicToAdd} added to your playlist: {nameOfPlaylist}!");
-                Console.WriteLine("Are you want to add more music [y,n]");
-                string yesOrNo = Console.ReadLine();
-                if (yesOrNo == "y")
-                {
-                    
-                }
-                else if (yesOrNo == "n")
-                {
-                    break;
-                }
-                
+                Console.WriteLine("Invalid or duplicate playlist name. Press any key to try again.");
+                Console.ReadKey();
+                Console.Clear();
+                return;
             }
 
-            Console.WriteLine($"Your created plalist has name: {nameOfPlaylist} and music: ");
-            for (int i = 0; i < musicToAdd.Count; i++)
+            List<string> musicToAdd = new List<string>();
+
+            while (true)
             {
-                Console.WriteLine(musicToAdd[i]);
+                var selectedMusic = AnsiConsole.Prompt(
+                    new SelectionPrompt<string>()
+                        .Title("Choose music to add to the playlist")
+                        .PageSize(10)
+                        .MoreChoicesText("[grey](Move up and down to reveal more music)[/]")
+                        .AddChoices(folderWithAudios.Select(Path.GetFileName)));
+
+                string fullPath = folderWithAudios.FirstOrDefault(f => Path.GetFileName(f) == selectedMusic);
+                if (fullPath != null && !musicToAdd.Contains(fullPath))
+                {
+                    musicToAdd.Add(fullPath);
+                    AnsiConsole.MarkupLine($"[green]{selectedMusic} added to playlist {nameOfPlaylist}.[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[red]{selectedMusic} is already in the playlist.[/]");
+                }
+
+                bool addMore = AnsiConsole.Confirm("Do you want to add more music?");
+                if (!addMore) break;
             }
+
+            playlists[nameOfPlaylist] = musicToAdd;
+            Console.WriteLine($"Playlist '{nameOfPlaylist}' created successfully.");
             Console.ReadKey();
             Console.Clear();
-        
         }
 
         static void ImportMusic(List<string> folderWithAudios)
         {
-            string currentPath = @"C:\Users\Daniel";            
+            string currentPath = @"C:\Users\Daniel";
 
             while (true)
             {
                 try
                 {
                     var entries = Directory.GetFileSystemEntries(currentPath)
-                        .Where(entry => Directory.Exists(entry) || IsAudioFile(entry)) 
+                        .Where(entry => Directory.Exists(entry) || IsAudioFile(entry))
                         .ToList();
-         
-                    Stack<string> pathHistory = new Stack<string>();
 
                     var selectedMusicOrFolder = AnsiConsole.Prompt(
                         new SelectionPrompt<string>()
                             .Title("Choose music to import")
-                            .PageSize(10) // Rozwiązanie w SpectreConsoleTest oraz problem z  page size!
+                            .PageSize(10)
                             .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
-                            .AddChoices(entries));                            
+                            .AddChoices(entries));
 
                     if (Directory.Exists(selectedMusicOrFolder))
                     {
@@ -149,11 +161,11 @@ namespace Audio
                         else
                         {
                             folderWithAudios.Add(selectedMusicOrFolder);
-                            AnsiConsole.MarkupLine($"[green]Add: {Path.GetFileName(selectedMusicOrFolder)}[/]");
+                            AnsiConsole.MarkupLine($"[green]Added: {Path.GetFileName(selectedMusicOrFolder)}[/]");
                             Console.ReadKey();
                             Console.Clear();
                             break;
-                        }                        
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -172,9 +184,28 @@ namespace Audio
             return allowedExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
         }
 
+        static void DisplayPlaylists(Dictionary<string, List<string>> playlists)
+        {
+            var table = new Table()
+                .Border(TableBorder.Rounded)
+                .Title("[yellow]Playlists[/]")
+                .AddColumn("[blue]Playlist Name[/]")
+                .AddColumn("[green]Tracks[/]");
+
+            foreach (var playlist in playlists)
+            {
+                string tracks = playlist.Value.Count > 0
+                    ? string.Join(", ", playlist.Value.Select(Path.GetFileName))
+                    : "[grey](No tracks)[/]";
+
+                table.AddRow($"[bold]{playlist.Key}[/]", tracks);
+            }
+
+            AnsiConsole.Write(table);
+        }
+
         static void PlayMusic(List<string> folderWithAudios, int input)
         {
-
             string selectedMusic = Path.GetFileName(folderWithAudios[input]);
             Console.WriteLine($"Selected music: {selectedMusic}");
 
@@ -188,7 +219,6 @@ namespace Audio
                 TimeSpan totalTime = audioFile.TotalTime;
 
                 string formattedTime = $"{totalTime.Hours:D2}:{totalTime.Minutes:D2}:{totalTime.Seconds:D2}";
-                string formattedTimer = $"{stopwatch.Elapsed.Hours:D2}:{stopwatch.Elapsed.Minutes:D2}:{stopwatch.Elapsed.Seconds:D2}";
 
                 bool isPlaying = true;
 
@@ -198,7 +228,7 @@ namespace Audio
                     {
                         Console.Clear();
                         Console.WriteLine($"Selected music: {selectedMusic}");
-                        Console.WriteLine($"Actual time of music: {stopwatch.Elapsed:hh\\:mm\\:ss}  ---   Total time: {formattedTime}");
+                        Console.WriteLine($"Current time: {stopwatch.Elapsed:hh\\:mm\\:ss}  /  Total time: {formattedTime}");
                         Console.WriteLine("[E] Pause | [Y] Stop");
 
                         if (audioFile.TotalTime <= stopwatch.Elapsed)
@@ -216,33 +246,28 @@ namespace Audio
 
                 while (true)
                 {
-                    if (!isPlaying)
+                    if (!isPlaying) break;
+
+                    ConsoleKeyInfo key = Console.ReadKey(true);
+                    if (key.Key == ConsoleKey.E)
                     {
-                        break;
-                    }
-                    else
-                    {
-                        ConsoleKeyInfo key = Console.ReadKey(true);
-                        if (key.Key == ConsoleKey.E)
+                        if (outputDevice.PlaybackState == PlaybackState.Playing)
                         {
-                            if (outputDevice.PlaybackState == PlaybackState.Playing)
-                            {
-                                outputDevice.Pause();
-                                stopwatch.Stop();
-                            }
-                            else
-                            {
-                                outputDevice.Play();
-                                stopwatch.Start();
-                            }
-                        }
-                        else if (key.Key == ConsoleKey.Y)
-                        {
-                            outputDevice.Stop();
+                            outputDevice.Pause();
                             stopwatch.Stop();
-                            isPlaying = false;
-                            break;
                         }
+                        else
+                        {
+                            outputDevice.Play();
+                            stopwatch.Start();
+                        }
+                    }
+                    else if (key.Key == ConsoleKey.Y)
+                    {
+                        outputDevice.Stop();
+                        stopwatch.Stop();
+                        isPlaying = false;
+                        break;
                     }
                 }
             }
