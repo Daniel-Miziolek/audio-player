@@ -34,9 +34,10 @@ namespace Audio
 
                 Console.WriteLine("1. Import music");
                 Console.WriteLine("2. Play music");
-                Console.WriteLine("3. Create playlist");
-                Console.WriteLine("4. Display playlists");
-                Console.WriteLine("5. Exit");
+                Console.WriteLine("3. Play playlist");
+                Console.WriteLine("4. Create playlist");
+                Console.WriteLine("5. Display playlists");
+                Console.WriteLine("6. Exit");
                 Console.Write("Enter your choice: ");
 
                 string input = Console.ReadLine();
@@ -55,19 +56,23 @@ namespace Audio
                             Console.Clear();
                             continue;
                         }
-                        PlayMusic(folderWithAudios, index);
+                        PlayMusic(folderWithAudios, index, false);
                         break;
-                    case "3":
-                        CreatePlaylist(folderWithAudios, playlists);
+                    case "3":                    
+                        Console.Clear();
+                        PlayPlaylist(playlists);                        
                         break;
                     case "4":
+                        CreatePlaylist(folderWithAudios, playlists);
+                        break;
+                    case "5":
                         Console.Clear();
                         DisplayPlaylists(playlists);
                         Console.WriteLine("Press any key to return to the menu...");
                         Console.ReadKey();
                         Console.Clear();
                         break;
-                    case "5":
+                    case "6":
                         Console.WriteLine("Are you sure you want to exit? [y,n]");
                         string yesOrNo = Console.ReadLine();
                         if (yesOrNo.ToLower() == "y") return;
@@ -79,6 +84,28 @@ namespace Audio
                         Console.Clear();
                         continue;
                 }
+            }
+        }
+
+        static void PlayPlaylist(Dictionary<string, List<string>> playlists)
+        {
+            DisplayPlaylists(playlists);
+
+            Console.Write("Enter the name of the playlist you want to play: ");
+            string playlistName = Console.ReadLine();
+
+            if (playlists.ContainsKey(playlistName))
+            {
+                Console.WriteLine($"Selected playlist: {playlistName}");
+                List<string> allItems = playlists.Values.Where(x => x != null).SelectMany(x => x).ToList();
+                PlayMusic(allItems, 0, true);
+            }
+            else
+            {
+                Console.WriteLine("Invalid name. Press any key to try again");
+                Console.ReadKey();
+                Console.Clear();
+                return;
             }
         }
 
@@ -204,75 +231,93 @@ namespace Audio
             AnsiConsole.Write(table);
         }
 
-        static void PlayMusic(List<string> folderWithAudios, int input)
+        static void PlayMusic(List<string> folderWithAudios, int index, bool isPlaylist)
         {
-            string selectedMusic = Path.GetFileName(folderWithAudios[input]);
-            Console.WriteLine($"Selected music: {selectedMusic}");
-
-            using (var audioFile = new AudioFileReader(folderWithAudios[input]))
-            using (var outputDevice = new WaveOutEvent())
+            while (index < folderWithAudios.Count)
             {
-                Stopwatch stopwatch = new Stopwatch();
-                outputDevice.Init(audioFile);
-                outputDevice.Play();
-                stopwatch.Start();
-                TimeSpan totalTime = audioFile.TotalTime;
+                string selectedMusic = Path.GetFileName(folderWithAudios[index]);
+                Console.Clear();
+                Console.WriteLine($"Playing music: {selectedMusic}");
 
-                string formattedTime = $"{totalTime.Hours:D2}:{totalTime.Minutes:D2}:{totalTime.Seconds:D2}";
-
-                bool isPlaying = true;
-
-                _ = Task.Run(async () =>
+                using (var audioFile = new AudioFileReader(folderWithAudios[index]))
+                using (var outputDevice = new WaveOutEvent())
                 {
+                    outputDevice.Init(audioFile);
+                    outputDevice.Play();
+
+                    TimeSpan totalTime = audioFile.TotalTime;
+                    Stopwatch stopwatch = Stopwatch.StartNew();
+
+                    _ = Task.Run(async () =>
+                    {
+                        while (outputDevice.PlaybackState == PlaybackState.Playing)
+                        {
+                            Console.Clear();
+                            Console.WriteLine($"Playing music: {selectedMusic}");
+                            Console.WriteLine($"Current time: {stopwatch.Elapsed:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
+                            Console.WriteLine("[E] Pause/Resume | [Y] Stop");
+                            await Task.Delay(500);
+                        }
+                    });
+
+                    bool isPlaying = true;
                     while (isPlaying)
                     {
-                        Console.Clear();
-                        Console.WriteLine($"Selected music: {selectedMusic}");
-                        Console.WriteLine($"Current time: {stopwatch.Elapsed:hh\\:mm\\:ss}  /  Total time: {formattedTime}");
-                        Console.WriteLine("[E] Pause | [Y] Stop");
-
-                        if (audioFile.TotalTime <= stopwatch.Elapsed)
+                        if (stopwatch.Elapsed >= totalTime)
                         {
-                            Console.WriteLine("Music has ended");
-                            outputDevice.Stop();
-                            stopwatch.Stop();
                             isPlaying = false;
                             break;
                         }
 
-                        await Task.Delay(1000);
-                    }
-                });
-
-                while (true)
-                {
-                    if (!isPlaying) break;
-
-                    ConsoleKeyInfo key = Console.ReadKey(true);
-                    if (key.Key == ConsoleKey.E)
-                    {
-                        if (outputDevice.PlaybackState == PlaybackState.Playing)
+                        if (Console.KeyAvailable)
                         {
-                            outputDevice.Pause();
-                            stopwatch.Stop();
-                        }
-                        else
-                        {
-                            outputDevice.Play();
-                            stopwatch.Start();
+                            var key = Console.ReadKey(true);
+                            if (key.Key == ConsoleKey.E)
+                            {
+                                if (outputDevice.PlaybackState == PlaybackState.Playing)
+                                {
+                                    outputDevice.Pause();
+                                    stopwatch.Stop();
+                                }
+                                else
+                                {
+                                    outputDevice.Play();
+                                    stopwatch.Start();
+                                }
+                            }
+                            else if (key.Key == ConsoleKey.Y)
+                            {
+                                outputDevice.Stop();
+                                stopwatch.Stop();
+                                isPlaying = false;
+                                break;
+                            }
                         }
                     }
-                    else if (key.Key == ConsoleKey.Y)
-                    {
-                        outputDevice.Stop();
-                        stopwatch.Stop();
-                        isPlaying = false;
-                        break;
-                    }
+
+                    outputDevice.Stop();
                 }
+
+                if (isPlaylist)
+                {
+                    index++;
+                }
+                else
+                {                    
+                    Console.WriteLine("Music has ended. Press any key to return to the main menu...");
+                    Console.ReadKey();
+                    break;
+                }
+            }
+
+            if (isPlaylist && index >= folderWithAudios.Count)
+            {
+                Console.WriteLine("Playlist has finished. Returning to the main menu...");
+                Thread.Sleep(2000); 
             }
 
             Console.Clear();
         }
+
     }
 }
