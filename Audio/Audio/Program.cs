@@ -19,7 +19,7 @@ namespace Audio
                         new Rows(
                             folderWithAudios
                                 .Select((audio, index) =>
-                                    new Panel($"Index: {index}  Name of the music: {Path.GetFileName(audio)}")
+                                    new Panel($"Index:[blue] {index}[/]  Name of the music: [green]{Path.GetFileName(audio)}[/]")
                                     {
                                         Border = BoxBorder.Rounded,
                                         Width = 60,
@@ -27,7 +27,7 @@ namespace Audio
                                 .ToArray()
                         )
                     )
-                    .Border(BoxBorder.Double)
+                    .Border(BoxBorder.Heavy)
                     .Header("[yellow]Imported Music[/]")
                     .Padding(1, 0, 1, 0)
                 );
