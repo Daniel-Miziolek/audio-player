@@ -48,19 +48,25 @@ namespace Audio
                         ImportMusic(folderWithAudios);
                         break;
                     case "2":
-                        Console.Write("Enter index of music you want to play: ");
-                        if (!int.TryParse(Console.ReadLine(), out int index) || index < 0 || index >= folderWithAudios.Count)
-                        {
-                            Console.WriteLine("Invalid index. Press any key to try again.");
-                            Console.ReadKey();
-                            Console.Clear();
-                            continue;
-                        }
+                        //if (!int.TryParse(Console.ReadLine(), out int index) || index < 0 || index >= folderWithAudios.Count)
+                        //{
+                        //    Console.WriteLine("Invalid index. Press any key to try again.");
+                        //    Console.ReadKey();
+                        //    Console.Clear();
+                        //    continue;
+                        //}
+                        var selectMusicToPlay = AnsiConsole.Prompt(
+                            new SelectionPrompt<string>()
+                                .Title("Choose music to play")
+                                .PageSize(10)
+                                .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
+                                .AddChoices(folderWithAudios.Select(Path.GetFileName)));
+                        int index = folderWithAudios.FindIndex(path => Path.GetFileName(path) == selectMusicToPlay);
                         PlayMusic(folderWithAudios, index, false);
                         break;
-                    case "3":                    
+                    case "3":
                         Console.Clear();
-                        PlayPlaylist(playlists);                        
+                        PlayPlaylist(playlists);
                         break;
                     case "4":
                         CreatePlaylist(folderWithAudios, playlists);
@@ -77,7 +83,7 @@ namespace Audio
                         string yesOrNo = Console.ReadLine();
                         if (yesOrNo.ToLower() == "y") return;
                         Console.Clear();
-                        break;                    
+                        break;
                     default:
                         Console.WriteLine("Invalid choice. Press any key to try again");
                         Console.ReadKey();
@@ -303,7 +309,7 @@ namespace Audio
                     index++;
                 }
                 else
-                {                    
+                {
                     Console.WriteLine("Music has ended. Press any key to return to the main menu...");
                     Console.ReadKey();
                     break;
@@ -313,7 +319,7 @@ namespace Audio
             if (isPlaylist && index >= folderWithAudios.Count)
             {
                 Console.WriteLine("Playlist has finished. Returning to the main menu...");
-                Thread.Sleep(2000); 
+                Thread.Sleep(2000);
             }
 
             Console.Clear();
