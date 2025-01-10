@@ -48,13 +48,6 @@ namespace Audio
                         ImportMusic(folderWithAudios);
                         break;
                     case "2":
-                        //if (!int.TryParse(Console.ReadLine(), out int index) || index < 0 || index >= folderWithAudios.Count)
-                        //{
-                        //    Console.WriteLine("Invalid index. Press any key to try again.");
-                        //    Console.ReadKey();
-                        //    Console.Clear();
-                        //    continue;
-                        //}
                         var selectMusicToPlay = AnsiConsole.Prompt(
                             new SelectionPrompt<string>()
                                 .Title("Choose music to play")
@@ -65,8 +58,22 @@ namespace Audio
                         PlayMusic(folderWithAudios, index, false);
                         break;
                     case "3":
-                        Console.Clear();
-                        PlayPlaylist(playlists);
+                        if (playlists.Count > 0)
+                        {
+                            var selectPlaylist = AnsiConsole.Prompt(
+                                new SelectionPrompt<string>()
+                                    .Title("Choose playlist to play")
+                                    .PageSize(10)
+                                    .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
+                                    .AddChoices(playlists.Select(key => key.Key)));
+                            PlayPlaylist(playlists, selectPlaylist);
+                        }
+                        else
+                        {
+                            Console.WriteLine("You haven't created any playlists yet. Press any key to continue");
+                            Console.ReadKey();
+                            Console.Clear();
+                        }
                         break;
                     case "4":
                         CreatePlaylist(folderWithAudios, playlists);
@@ -93,25 +100,28 @@ namespace Audio
             }
         }
 
-        static void PlayPlaylist(Dictionary<string, List<string>> playlists)
+        static void PlayPlaylist(Dictionary<string, List<string>> playlists, string playlistName)
         {
-            DisplayPlaylists(playlists);
-
-            Console.Write("Enter the name of the playlist you want to play: ");
-            string playlistName = Console.ReadLine();
-
-            if (playlists.ContainsKey(playlistName))
+            if (playlists.TryGetValue(playlistName, out List<string> playlistTracks))
             {
-                Console.WriteLine($"Selected playlist: {playlistName}");
-                List<string> allItems = playlists.Values.Where(x => x != null).SelectMany(x => x).ToList();
-                PlayMusic(allItems, 0, true);
+                Console.Clear();
+                Console.WriteLine($"Playing playlist: {playlistName}");
+
+                if (playlistTracks.Count == 0)
+                {
+                    Console.WriteLine("This playlist is empty. Press any key to return to the menu...");
+                    Console.ReadKey();
+                    Console.Clear();
+                    return;
+                }
+
+                PlayMusic(playlistTracks, 0, true);
             }
             else
             {
-                Console.WriteLine("Invalid name. Press any key to try again");
+                Console.WriteLine("Invalid playlist name. Press any key to try again...");
                 Console.ReadKey();
                 Console.Clear();
-                return;
             }
         }
 
@@ -208,7 +218,6 @@ namespace Audio
                     Console.ReadKey();
                 }
             }
-
         }
 
         static bool IsAudioFile(string path)
@@ -324,6 +333,5 @@ namespace Audio
 
             Console.Clear();
         }
-
     }
 }
