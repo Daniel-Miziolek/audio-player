@@ -248,6 +248,9 @@ namespace Audio
 
         static void PlayMusic(List<string> folderWithAudios, int index, bool isPlaylist)
         {
+            TimeSpan accumulatedPauseTime = TimeSpan.Zero; 
+            DateTime pauseStartTime = DateTime.MinValue;   
+
             while (index < folderWithAudios.Count)
             {
                 string selectedMusic = Path.GetFileName(folderWithAudios[index]);
@@ -265,11 +268,13 @@ namespace Audio
 
                     _ = Task.Run(async () =>
                     {
-                        while (outputDevice.PlaybackState == PlaybackState.Playing)
+                        while (outputDevice.PlaybackState != PlaybackState.Stopped)
                         {
+                            TimeSpan elapsedTime = stopwatch.Elapsed + accumulatedPauseTime;
+
                             Console.Clear();
                             Console.WriteLine($"Playing music: {selectedMusic}");
-                            Console.WriteLine($"Current time: {stopwatch.Elapsed:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
+                            Console.WriteLine($"Current time: {elapsedTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
                             Console.WriteLine("[E] Pause/Resume | [Y] Stop");
                             await Task.Delay(500);
                         }
@@ -278,7 +283,7 @@ namespace Audio
                     bool isPlaying = true;
                     while (isPlaying)
                     {
-                        if (stopwatch.Elapsed >= totalTime)
+                        if (stopwatch.Elapsed + accumulatedPauseTime >= totalTime)
                         {
                             isPlaying = false;
                             break;
@@ -287,15 +292,18 @@ namespace Audio
                         if (Console.KeyAvailable)
                         {
                             var key = Console.ReadKey(true);
+
                             if (key.Key == ConsoleKey.E)
                             {
                                 if (outputDevice.PlaybackState == PlaybackState.Playing)
                                 {
                                     outputDevice.Pause();
+                                    pauseStartTime = DateTime.Now; 
                                     stopwatch.Stop();
                                 }
                                 else
-                                {
+                                {                                    
+
                                     outputDevice.Play();
                                     stopwatch.Start();
                                 }
@@ -333,5 +341,6 @@ namespace Audio
 
             Console.Clear();
         }
+
     }
 }
