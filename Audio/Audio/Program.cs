@@ -8,29 +8,12 @@ namespace Audio
     {
         static async Task Main(string[] args)
         {
-            string path = @"C:\Users\Daniel\Desktop\Audio";
-            List<string> folderWithAudios = Directory.GetFileSystemEntries(path).ToList();
+            List<string> folderWithAudios = new();
             Dictionary<string, List<string>> playlists = new Dictionary<string, List<string>>();
 
             while (true)
             {
-                AnsiConsole.Write(
-                    new Panel(
-                        new Rows(
-                            folderWithAudios
-                                .Select((audio, index) =>
-                                    new Panel($"Index:[blue] {index}[/]  Name of the music: [green]{Path.GetFileName(audio)}[/]")
-                                    {
-                                        Border = BoxBorder.Rounded,
-                                        Width = 60,
-                                    })
-                                .ToArray()
-                        )
-                    )
-                    .Border(BoxBorder.Heavy)
-                    .Header("[yellow]Imported Music[/]")
-                    .Padding(1, 0, 1, 0)
-                );
+                DisplayMusicList(folderWithAudios, "Imported music");         
 
                 Console.WriteLine("1. Import music");
                 Console.WriteLine("2. Play music");
@@ -48,14 +31,23 @@ namespace Audio
                         ImportMusic(folderWithAudios);
                         break;
                     case "2":
-                        var selectMusicToPlay = AnsiConsole.Prompt(
+                        if (folderWithAudios.Count > 0)
+                        {
+                            var selectMusicToPlay = AnsiConsole.Prompt(
                             new SelectionPrompt<string>()
                                 .Title("Choose music to play")
                                 .PageSize(10)
                                 .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
                                 .AddChoices(folderWithAudios.Select(Path.GetFileName)));
-                        int index = folderWithAudios.FindIndex(path => Path.GetFileName(path) == selectMusicToPlay);
-                        PlayMusic(folderWithAudios, index, false);
+                            int index = folderWithAudios.FindIndex(path => Path.GetFileName(path) == selectMusicToPlay);
+                            PlayMusic(folderWithAudios, index, false);
+                        }
+                        else
+                        {
+                            Console.WriteLine("You haven't imported any music yet. Press any key to continue");
+                            Console.ReadKey();
+                            Console.Clear();
+                        }                        
                         break;
                     case "3":
                         if (playlists.Count > 0)
@@ -99,6 +91,31 @@ namespace Audio
                 }
             }
         }
+
+        static void DisplayMusicList(List<string> musicList, string header)
+        {
+            var table = new Table().Border(TableBorder.Heavy);
+
+            if (musicList.Count > 0)
+            {
+                table.AddColumn("[yellow]Index[/]").AddColumn("[yellow]Music Name[/]");
+                foreach (var (audio, index) in musicList.Select((audio, index) => (audio, index)))
+                {
+                    table.AddRow($"[blue]{index}[/]", $"[green]{Path.GetFileName(audio)}[/]");
+                }
+            }
+            else
+            {
+                table.AddColumn("[red]You haven't imported any music yet[/]");
+            }
+
+            AnsiConsole.Write(
+                new Panel(table)
+                    .Header($"[yellow]{header}[/]")
+                    .Border(BoxBorder.Heavy)
+                    .Padding(1, 0, 1, 0));
+        }
+
 
         static void PlayPlaylist(Dictionary<string, List<string>> playlists, string playlistName)
         {
@@ -335,8 +352,8 @@ namespace Audio
 
             if (isPlaylist && index >= folderWithAudios.Count)
             {
-                Console.WriteLine("Playlist has finished. Returning to the main menu...");
-                Thread.Sleep(2000);
+                Console.WriteLine("Playlist has finished. Press any key to return to the main menu...");
+                Console.ReadKey();
             }
 
             Console.Clear();
