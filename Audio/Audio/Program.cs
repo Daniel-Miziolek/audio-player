@@ -189,7 +189,7 @@ namespace Audio
 
         static void ImportMusic(List<string> folderWithAudios)
         {
-            string currentPath = @"C:\Users\Daniel";
+            string currentPath = ChooseDrive();
 
             while (true)
             {
@@ -199,9 +199,10 @@ namespace Audio
                         .Where(entry => Directory.Exists(entry) || IsAudioFile(entry))
                         .ToList();
 
+
                     var selectedMusicOrFolder = AnsiConsole.Prompt(
                         new SelectionPrompt<string>()
-                            .Title("Choose music to import")
+                            .Title($"Browsing: [blue]{currentPath}[/]")
                             .PageSize(10)
                             .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
                             .AddChoices(entries));
@@ -222,7 +223,6 @@ namespace Audio
                         {
                             folderWithAudios.Add(selectedMusicOrFolder);
                             AnsiConsole.MarkupLine($"[green]Added: {Path.GetFileName(selectedMusicOrFolder)}[/]");
-                            Console.ReadKey();
                             Console.Clear();
                             break;
                         }
@@ -232,9 +232,23 @@ namespace Audio
                 {
                     AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
                     Console.WriteLine("Press any key to continue...");
-                    Console.ReadKey();
+                    Console.ReadKey();                    
                 }
             }
+        }
+
+        static string ChooseDrive()
+        {
+            var drives = DriveInfo.GetDrives()
+                .Where(d => d.IsReady)
+                .Select(d => d.Name)
+                .ToList();
+
+            return AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Choose a drive to start browsing:")
+                    .PageSize(10)
+                    .AddChoices(drives));
         }
 
         static bool IsAudioFile(string path)
