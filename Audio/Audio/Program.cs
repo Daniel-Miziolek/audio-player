@@ -13,7 +13,7 @@ namespace Audio
 
             while (true)
             {
-                DisplayMusicList(folderWithAudios, "Imported music");         
+                DisplayMusicList(folderWithAudios, "Imported music");
 
                 Console.WriteLine("1. Import music");
                 Console.WriteLine("2. Play music");
@@ -47,7 +47,7 @@ namespace Audio
                             Console.WriteLine("You haven't imported any music yet. Press any key to continue");
                             Console.ReadKey();
                             Console.Clear();
-                        }                        
+                        }
                         break;
                     case "3":
                         if (playlists.Count > 0)
@@ -190,6 +190,7 @@ namespace Audio
         static void ImportMusic(List<string> folderWithAudios)
         {
             string currentPath = ChooseDrive();
+            Stack<string> pathHistory = new Stack<string>();
 
             while (true)
             {
@@ -199,6 +200,7 @@ namespace Audio
                         .Where(entry => Directory.Exists(entry) || IsAudioFile(entry))
                         .ToList();
 
+                    entries.Insert(0, "Go back");
 
                     var selectedMusicOrFolder = AnsiConsole.Prompt(
                         new SelectionPrompt<string>()
@@ -207,8 +209,11 @@ namespace Audio
                             .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
                             .AddChoices(entries));
 
+
+
                     if (Directory.Exists(selectedMusicOrFolder))
                     {
+                        pathHistory.Push(currentPath);
                         currentPath = selectedMusicOrFolder;
                     }
                     else if (File.Exists(selectedMusicOrFolder))
@@ -227,12 +232,26 @@ namespace Audio
                             break;
                         }
                     }
+                    else if (selectedMusicOrFolder == "Go back")
+                    {
+                        if (pathHistory.Count > 0)
+                        {
+                            currentPath = pathHistory.Pop();
+                            continue;
+                        }
+                    }
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]Access denided: {ex.Message}[/]");
+                }
+                catch (IOException ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]I/O error: {ex.Message}[/]");
                 }
                 catch (Exception ex)
                 {
                     AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
-                    Console.WriteLine("Press any key to continue...");
-                    Console.ReadKey();                    
                 }
             }
         }
@@ -279,8 +298,9 @@ namespace Audio
 
         static void PlayMusic(List<string> folderWithAudios, int index, bool isPlaylist)
         {
-            TimeSpan accumulatedPauseTime = TimeSpan.Zero; 
-            DateTime pauseStartTime = DateTime.MinValue;   
+            TimeSpan accumulatedPauseTime = TimeSpan.Zero;
+            DateTime pauseStartTime = DateTime.MinValue;
+            bool isStoped = false;
 
             while (index < folderWithAudios.Count)
             {
@@ -307,6 +327,7 @@ namespace Audio
                             Console.WriteLine($"Playing music: {selectedMusic}");
                             Console.WriteLine($"Current time: {elapsedTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
                             Console.WriteLine("[E] Pause/Resume | [Y] Stop");
+
                             await Task.Delay(500);
                         }
                     });
@@ -329,11 +350,11 @@ namespace Audio
                                 if (outputDevice.PlaybackState == PlaybackState.Playing)
                                 {
                                     outputDevice.Pause();
-                                    pauseStartTime = DateTime.Now; 
+                                    pauseStartTime = DateTime.Now;
                                     stopwatch.Stop();
                                 }
                                 else
-                                {                                    
+                                {
 
                                     outputDevice.Play();
                                     stopwatch.Start();
@@ -344,6 +365,7 @@ namespace Audio
                                 outputDevice.Stop();
                                 stopwatch.Stop();
                                 isPlaying = false;
+                                isStoped = true;
                                 break;
                             }
                         }
@@ -358,9 +380,18 @@ namespace Audio
                 }
                 else
                 {
-                    Console.WriteLine("Music has ended. Press any key to return to the main menu...");
-                    Console.ReadKey();
-                    break;
+                    if (isStoped == true)
+                    {
+                        Console.WriteLine("Music has been stopped. Press any key to return to the main menu...");
+                        Console.ReadKey();
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Music has ended. Press any key to return to the main menu...");
+                        Console.ReadKey();
+                        break;
+                    }
                 }
             }
 
