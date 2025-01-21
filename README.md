@@ -21,6 +21,3 @@ A simple console-based audio player allowing users to import, play, and manage p
 Clone the repository:
 ```bash
 git clone https://github.com/Daniel-Miziolek/audio-player.git
-cd audio-player
-dotnet restore
-dotnet run
