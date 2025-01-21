@@ -300,7 +300,7 @@ namespace Audio
         {
             TimeSpan accumulatedPauseTime = TimeSpan.Zero;
             DateTime pauseStartTime = DateTime.MinValue;
-            bool isStoped = false;
+            bool isStopped = false;
 
             while (index < folderWithAudios.Count)
             {
@@ -365,7 +365,7 @@ namespace Audio
                                 outputDevice.Stop();
                                 stopwatch.Stop();
                                 isPlaying = false;
-                                isStoped = true;
+                                isStopped = true;
                                 break;
                             }
                         }
@@ -380,7 +380,7 @@ namespace Audio
                 }
                 else
                 {
-                    if (isStoped == true)
+                    if (isStopped == true)
                     {
                         Console.WriteLine("Music has been stopped. Press any key to return to the main menu...");
                         Console.ReadKey();
