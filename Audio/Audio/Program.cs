@@ -10,35 +10,29 @@ namespace Audio
         {
             List<string> folderWithAudios = new();
             Dictionary<string, List<string>> playlists = new Dictionary<string, List<string>>();
+            List<string> options = new List<string> { "Import music", "Play music", "Play playlist", "Create playlist", "Display playlists", "Exit" };
 
             while (true)
             {
                 DisplayMusicList(folderWithAudios, "Imported music");
 
-                Console.WriteLine("1. Import music");
-                Console.WriteLine("2. Play music");
-                Console.WriteLine("3. Play playlist");
-                Console.WriteLine("4. Create playlist");
-                Console.WriteLine("5. Display playlists");
-                Console.WriteLine("6. Exit");
-                Console.Write("Enter your choice: ");
-
-                string input = Console.ReadLine();
+                string input = PromptWithSelection("Choose one of the options", options);
 
                 switch (input)
                 {
-                    case "1":
+                    case "Import music":
                         ImportMusic(folderWithAudios);
                         break;
-                    case "2":
+                    case "Play music":
                         if (folderWithAudios.Count > 0)
                         {
                             var selectMusicToPlay = AnsiConsole.Prompt(
-                            new SelectionPrompt<string>()
-                                .Title("Choose music to play")
-                                .PageSize(10)
-                                .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
-                                .AddChoices(folderWithAudios.Select(Path.GetFileName)));
+                                new SelectionPrompt<string>()
+                                    .Title("Choose music to play")
+                                    .PageSize(10)
+                                    .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
+                                    .AddChoices(folderWithAudios.Select(Path.GetFileName))
+                            );
                             int index = folderWithAudios.FindIndex(path => Path.GetFileName(path) == selectMusicToPlay);
                             PlayMusic(folderWithAudios, index, false);
                         }
@@ -49,7 +43,7 @@ namespace Audio
                             Console.Clear();
                         }
                         break;
-                    case "3":
+                    case "Play playlist":
                         if (playlists.Count > 0)
                         {
                             var selectPlaylist = AnsiConsole.Prompt(
@@ -57,7 +51,8 @@ namespace Audio
                                     .Title("Choose playlist to play")
                                     .PageSize(10)
                                     .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
-                                    .AddChoices(playlists.Select(key => key.Key)));
+                                    .AddChoices(playlists.Select(key => key.Key))
+                            );
                             PlayPlaylist(playlists, selectPlaylist);
                         }
                         else
@@ -67,17 +62,26 @@ namespace Audio
                             Console.Clear();
                         }
                         break;
-                    case "4":
-                        CreatePlaylist(folderWithAudios, playlists);
+                    case "Create playlist":
+                        if (folderWithAudios.Count > 0)
+                        {
+                            CreatePlaylist(folderWithAudios, playlists);
+                        }
+                        else
+                        {
+                            Console.WriteLine("You haven't imported any music yet. Press any key to continue");
+                            Console.ReadKey();
+                            Console.Clear();
+                        }
                         break;
-                    case "5":
+                    case "Display playlists":
                         Console.Clear();
                         DisplayPlaylists(playlists);
                         Console.WriteLine("Press any key to return to the menu...");
                         Console.ReadKey();
                         Console.Clear();
                         break;
-                    case "6":
+                    case "Exit":
                         Console.WriteLine("Are you sure you want to exit? [y,n]");
                         string yesOrNo = Console.ReadLine();
                         if (yesOrNo.ToLower() == "y") return;
@@ -89,7 +93,18 @@ namespace Audio
                         Console.Clear();
                         continue;
                 }
+
             }
+        }
+
+        static string PromptWithSelection(string title, IEnumerable<string> choices)
+        {
+            return AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title(title)
+                    .PageSize(10)
+                    .AddChoices(choices)
+            );
         }
 
         static void DisplayMusicList(List<string> musicList, string header)
@@ -113,7 +128,8 @@ namespace Audio
                 new Panel(table)
                     .Header($"[yellow]{header}[/]")
                     .Border(BoxBorder.Heavy)
-                    .Padding(1, 0, 1, 0));
+                    .Padding(1, 0, 1, 0)
+            );
         }
 
 
@@ -164,7 +180,9 @@ namespace Audio
                         .Title("Choose music to add to the playlist")
                         .PageSize(10)
                         .MoreChoicesText("[grey](Move up and down to reveal more music)[/]")
-                        .AddChoices(folderWithAudios.Select(Path.GetFileName)));
+                        .AddChoices(folderWithAudios.Select(Path.GetFileName)
+                    )
+                );
 
                 string fullPath = folderWithAudios.FirstOrDefault(f => Path.GetFileName(f) == selectedMusic);
                 if (fullPath != null && !musicToAdd.Contains(fullPath))
@@ -207,7 +225,8 @@ namespace Audio
                             .Title($"Browsing: [blue]{currentPath}[/]")
                             .PageSize(10)
                             .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
-                            .AddChoices(entries));
+                            .AddChoices(entries)
+                    );
 
 
 
@@ -267,7 +286,8 @@ namespace Audio
                 new SelectionPrompt<string>()
                     .Title("Choose a drive to start browsing:")
                     .PageSize(10)
-                    .AddChoices(drives));
+                    .AddChoices(drives)
+            );
         }
 
         static bool IsAudioFile(string path)
