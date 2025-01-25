@@ -8,33 +8,33 @@ namespace Audio
     {
         static async Task Main(string[] args)
         {
-            List<string> folderWithAudios = new();
+            List<string> importedMusicList = new();
             Dictionary<string, List<string>> playlists = new Dictionary<string, List<string>>();
             List<string> options = new List<string> { "Import music", "Play music", "Play playlist", "Create playlist", "Display playlists", "Exit" };
 
             while (true)
             {
-                DisplayMusicList(folderWithAudios, "Imported music");
+                DisplayMusicList(importedMusicList, "Imported music");
 
                 string input = PromptWithSelection("Choose one of the options", options);
 
                 switch (input)
                 {
                     case "Import music":
-                        ImportMusic(folderWithAudios);
+                        ImportMusic(importedMusicList);
                         break;
                     case "Play music":
-                        if (folderWithAudios.Count > 0)
+                        if (importedMusicList.Count > 0)
                         {
                             var selectMusicToPlay = AnsiConsole.Prompt(
                                 new SelectionPrompt<string>()
                                     .Title("Choose music to play")
                                     .PageSize(10)
                                     .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
-                                    .AddChoices(folderWithAudios.Select(Path.GetFileName))
+                                    .AddChoices(importedMusicList.Select(Path.GetFileName))
                             );
-                            int index = folderWithAudios.FindIndex(path => Path.GetFileName(path) == selectMusicToPlay);
-                            PlayMusic(folderWithAudios, index, false);
+                            int index = importedMusicList.FindIndex(path => Path.GetFileName(path) == selectMusicToPlay);
+                            PlayMusic(importedMusicList, index, false);
                         }
                         else
                         {
@@ -63,9 +63,9 @@ namespace Audio
                         }
                         break;
                     case "Create playlist":
-                        if (folderWithAudios.Count > 0)
+                        if (importedMusicList.Count > 0)
                         {
-                            CreatePlaylist(folderWithAudios, playlists);
+                            CreatePlaylist(importedMusicList, playlists);
                         }
                         else
                         {
@@ -158,7 +158,7 @@ namespace Audio
             }
         }
 
-        static void CreatePlaylist(List<string> folderWithAudios, Dictionary<string, List<string>> playlists)
+        static void CreatePlaylist(List<string> importedMusicList, Dictionary<string, List<string>> playlists)
         {
             Console.Write("Enter a name for the playlist: ");
             string nameOfPlaylist = Console.ReadLine();
@@ -180,11 +180,11 @@ namespace Audio
                         .Title("Choose music to add to the playlist")
                         .PageSize(10)
                         .MoreChoicesText("[grey](Move up and down to reveal more music)[/]")
-                        .AddChoices(folderWithAudios.Select(Path.GetFileName)
+                        .AddChoices(importedMusicList.Select(Path.GetFileName)
                     )
                 );
 
-                string fullPath = folderWithAudios.FirstOrDefault(f => Path.GetFileName(f) == selectedMusic);
+                string fullPath = importedMusicList.FirstOrDefault(f => Path.GetFileName(f) == selectedMusic);
                 if (fullPath != null && !musicToAdd.Contains(fullPath))
                 {
                     musicToAdd.Add(fullPath);
@@ -205,7 +205,7 @@ namespace Audio
             Console.Clear();
         }
 
-        static void ImportMusic(List<string> folderWithAudios)
+        static void ImportMusic(List<string> importedMusicList)
         {
             string currentPath = ChooseDrive();
             Stack<string> pathHistory = new Stack<string>();
@@ -237,7 +237,7 @@ namespace Audio
                     }
                     else if (File.Exists(selectedMusicOrFolder))
                     {
-                        if (folderWithAudios.Contains(selectedMusicOrFolder))
+                        if (importedMusicList.Contains(selectedMusicOrFolder))
                         {
                             AnsiConsole.MarkupLine($"[red]This music has already been imported: {Path.GetFileName(selectedMusicOrFolder)}[/]");
                             Console.WriteLine("Press any key to continue...");
@@ -245,7 +245,7 @@ namespace Audio
                         }
                         else
                         {
-                            folderWithAudios.Add(selectedMusicOrFolder);
+                            importedMusicList.Add(selectedMusicOrFolder);
                             AnsiConsole.MarkupLine($"[green]Added: {Path.GetFileName(selectedMusicOrFolder)}[/]");
                             Console.Clear();
                             break;
@@ -316,19 +316,19 @@ namespace Audio
             AnsiConsole.Write(table);
         }
 
-        static void PlayMusic(List<string> folderWithAudios, int index, bool isPlaylist)
+        static void PlayMusic(List<string> importedMusicList, int index, bool isPlaylist)
         {
             TimeSpan accumulatedPauseTime = TimeSpan.Zero;
             DateTime pauseStartTime = DateTime.MinValue;
             bool isStopped = false;
 
-            while (index < folderWithAudios.Count)
+            while (index < importedMusicList.Count)
             {
-                string selectedMusic = Path.GetFileName(folderWithAudios[index]);
+                string selectedMusic = Path.GetFileName(importedMusicList[index]);
                 Console.Clear();
                 Console.WriteLine($"Playing music: {selectedMusic}");
 
-                using (var audioFile = new AudioFileReader(folderWithAudios[index]))
+                using (var audioFile = new AudioFileReader(importedMusicList[index]))
                 using (var outputDevice = new WaveOutEvent())
                 {
                     outputDevice.Init(audioFile);
@@ -415,7 +415,7 @@ namespace Audio
                 }
             }
 
-            if (isPlaylist && index >= folderWithAudios.Count)
+            if (isPlaylist && index >= importedMusicList.Count)
             {
                 Console.WriteLine("Playlist has finished. Press any key to return to the main menu...");
                 Console.ReadKey();
