@@ -84,8 +84,8 @@ namespace Audio
                     case "Exit":
                         Console.WriteLine("Are you sure you want to exit? [y,n]");
                         string yesOrNo = Console.ReadLine();
-                        if (yesOrNo.ToLower() == "y") return;
                         Console.Clear();
+                        if (yesOrNo.ToLower() == "y") return;
                         break;
                     default:
                         Console.WriteLine("Invalid choice. Press any key to try again");
@@ -257,6 +257,11 @@ namespace Audio
                         {
                             currentPath = pathHistory.Pop();
                             continue;
+                        }
+                        else
+                        {
+                            Console.Clear();
+                            return;
                         }
                     }
                 }
