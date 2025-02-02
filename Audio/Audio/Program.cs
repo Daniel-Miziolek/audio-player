@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Audio;
 using NAudio.Wave;
 using Spectre.Console;
 
@@ -8,8 +9,11 @@ namespace Audio
     {
         static async Task Main(string[] args)
         {
-            List<string> importedMusicList = new();
-            Dictionary<string, List<string>> playlists = new Dictionary<string, List<string>>();
+            MusicData musicData = MusicData.LoadFromFile();
+
+            List<string> importedMusicList = musicData.ImportedMusic;
+            Dictionary<string, List<string>> playlists = musicData.Playlists;
+
             List<string> options = new List<string> { "Import music", "Play music", "Play playlist", "Create playlist", "Display playlists", "Exit" };
 
             while (true)
@@ -22,6 +26,7 @@ namespace Audio
                 {
                     case "Import music":
                         ImportMusic(importedMusicList);
+                        musicData.SaveToFile();
                         break;
                     case "Play music":
                         if (importedMusicList.Count > 0)
@@ -66,6 +71,7 @@ namespace Audio
                         if (importedMusicList.Count > 0)
                         {
                             CreatePlaylist(importedMusicList, playlists);
+                            musicData.SaveToFile();
                         }
                         else
                         {
@@ -180,8 +186,7 @@ namespace Audio
                         .Title("Choose music to add to the playlist")
                         .PageSize(10)
                         .MoreChoicesText("[grey](Move up and down to reveal more music)[/]")
-                        .AddChoices(importedMusicList.Select(Path.GetFileName)
-                    )
+                        .AddChoices(importedMusicList.Select(Path.GetFileName))
                 );
 
                 string fullPath = importedMusicList.FirstOrDefault(f => Path.GetFileName(f) == selectedMusic);
@@ -190,16 +195,13 @@ namespace Audio
                     musicToAdd.Add(fullPath);
                     AnsiConsole.MarkupLine($"[green]{selectedMusic} added to playlist {nameOfPlaylist}.[/]");
                 }
-                else
-                {
-                    AnsiConsole.MarkupLine($"[red]{selectedMusic} is already in the playlist.[/]");
-                }
 
                 bool addMore = AnsiConsole.Confirm("Do you want to add more music?");
                 if (!addMore) break;
             }
 
             playlists[nameOfPlaylist] = musicToAdd;
+            new MusicData { Playlists = playlists }.SaveToFile();
             Console.WriteLine($"Playlist '{nameOfPlaylist}' created successfully.");
             Console.ReadKey();
             Console.Clear();
@@ -228,8 +230,6 @@ namespace Audio
                             .AddChoices(entries)
                     );
 
-
-
                     if (Directory.Exists(selectedMusicOrFolder))
                     {
                         pathHistory.Push(currentPath);
@@ -237,18 +237,15 @@ namespace Audio
                     }
                     else if (File.Exists(selectedMusicOrFolder))
                     {
-                        if (importedMusicList.Contains(selectedMusicOrFolder))
-                        {
-                            AnsiConsole.MarkupLine($"[red]This music has already been imported: {Path.GetFileName(selectedMusicOrFolder)}[/]");
-                            Console.WriteLine("Press any key to continue...");
-                            Console.ReadKey();
-                        }
-                        else
+                        if (!importedMusicList.Contains(selectedMusicOrFolder))
                         {
                             importedMusicList.Add(selectedMusicOrFolder);
                             AnsiConsole.MarkupLine($"[green]Added: {Path.GetFileName(selectedMusicOrFolder)}[/]");
-                            Console.Clear();
-                            break;
+                            new MusicData { ImportedMusic = importedMusicList }.SaveToFile();
+                        }
+                        else
+                        {
+                            AnsiConsole.MarkupLine($"[red]This music has already been imported: {Path.GetFileName(selectedMusicOrFolder)}[/]");
                         }
                     }
                     else if (selectedMusicOrFolder == "Go back")
@@ -256,7 +253,6 @@ namespace Audio
                         if (pathHistory.Count > 0)
                         {
                             currentPath = pathHistory.Pop();
-                            continue;
                         }
                         else
                         {
@@ -265,20 +261,13 @@ namespace Audio
                         }
                     }
                 }
-                catch (UnauthorizedAccessException ex)
-                {
-                    AnsiConsole.MarkupLine($"[red]Access denided: {ex.Message}[/]");
-                }
-                catch (IOException ex)
-                {
-                    AnsiConsole.MarkupLine($"[red]I/O error: {ex.Message}[/]");
-                }
                 catch (Exception ex)
                 {
                     AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
                 }
             }
         }
+
 
         static string ChooseDrive()
         {
