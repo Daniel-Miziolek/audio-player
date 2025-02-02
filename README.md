@@ -5,7 +5,7 @@ A simple console-based audio player allowing users to import, play, and manage p
 ## Features
 - Import and play audio files (.mp3, .wav, .flac, .ogg).
 - Create and manage playlists.
-- Pause, resume, or stop playback.
+- Pause, resume, stop or volume control of playback.
 
 ## Usage
 1. **Import music** from directories.
