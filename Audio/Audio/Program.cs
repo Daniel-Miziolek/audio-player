@@ -310,6 +310,26 @@ namespace Audio
             AnsiConsole.Write(table);
         }
 
+        static void ChangeVolume(WaveOutEvent outputDevice, bool increase)
+        {
+            float minVolume = 0.0F;
+            float maxVolume = 1.0F;
+            float volumeChange = 0.1F;
+
+            float currentVolume = outputDevice.Volume;
+
+            if (increase)
+            {
+                currentVolume = Math.Min(currentVolume + volumeChange, maxVolume);
+            }
+            else
+            {
+                currentVolume = Math.Max(currentVolume - volumeChange, minVolume);
+            }
+
+            outputDevice.Volume = currentVolume;
+        }
+
         static void PlayMusic(List<string> importedMusicList, int index, bool isPlaylist)
         {
             TimeSpan accumulatedPauseTime = TimeSpan.Zero;
@@ -340,7 +360,7 @@ namespace Audio
                             Console.Clear();
                             Console.WriteLine($"Playing music: {selectedMusic}");
                             Console.WriteLine($"Current time: {elapsedTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
-                            Console.WriteLine("[E] Pause/Resume | [Y] Stop");
+                            Console.WriteLine("[E] Pause/Resume | [Y] Stop | [+/-] Volume");
 
                             await Task.Delay(500);
                         }
@@ -369,7 +389,6 @@ namespace Audio
                                 }
                                 else
                                 {
-
                                     outputDevice.Play();
                                     stopwatch.Start();
                                 }
@@ -381,6 +400,14 @@ namespace Audio
                                 isPlaying = false;
                                 isStopped = true;
                                 break;
+                            }
+                            else if (key.Key == ConsoleKey.OemPlus)
+                            {
+                                ChangeVolume(outputDevice, true);
+                            }
+                            else if (key.Key == ConsoleKey.OemMinus)
+                            {
+                                ChangeVolume(outputDevice, false);
                             }
                         }
                     }
@@ -394,7 +421,7 @@ namespace Audio
                 }
                 else
                 {
-                    if (isStopped == true)
+                    if (isStopped)
                     {
                         Console.WriteLine("Music has been stopped. Press any key to return to the main menu...");
                         Console.ReadKey();
@@ -417,6 +444,7 @@ namespace Audio
 
             Console.Clear();
         }
+
 
     }
 }
