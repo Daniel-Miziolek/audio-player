@@ -361,6 +361,7 @@ namespace Audio
                             Console.WriteLine($"Playing music: {selectedMusic}");
                             Console.WriteLine($"Current time: {elapsedTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
                             Console.WriteLine("[E] Pause/Resume | [Y] Stop | [+/-] Volume");
+                            Console.WriteLine($"Volume: {Math.Round(outputDevice.Volume * 100)}");
 
                             await Task.Delay(500);
                         }
