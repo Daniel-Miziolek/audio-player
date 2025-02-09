@@ -314,7 +314,7 @@ namespace Audio
         {
             float minVolume = 0.0F;
             float maxVolume = 1.0F;
-            float volumeChange = 0.1F;
+            float volumeChange = 0.01F;
 
             float currentVolume = outputDevice.Volume;
 
