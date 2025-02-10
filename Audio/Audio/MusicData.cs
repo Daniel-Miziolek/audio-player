@@ -56,7 +56,7 @@ namespace Audio
             }
             else
             {
-                Console.WriteLine($"[Error] Could not find music with name: {keyOfThePlaylist}");
+                Console.WriteLine($"[Error] Could not find playlist with name: {keyOfThePlaylist}");
             }
             return this;
         }
