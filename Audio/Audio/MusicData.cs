@@ -32,6 +32,34 @@ namespace Audio
             }
             return new MusicData();
         }
+
+        public MusicData DeleteMusic(string nameOfTheMusic)
+        {
+            if (ImportedMusic.Contains(nameOfTheMusic))
+            {
+                ImportedMusic.Remove(nameOfTheMusic);
+                SaveToFile();
+            }
+            else
+            {
+                Console.WriteLine($"[Error] Could not find music with name: {nameOfTheMusic}");
+            }
+            return this;
+        }
+
+        public MusicData DeletePlaylist(string keyOfThePlaylist)
+        {
+            if (Playlists.Select(key => key.Key).Contains(keyOfThePlaylist))
+            {
+                Playlists.Remove(keyOfThePlaylist);
+                SaveToFile();
+            }
+            else
+            {
+                Console.WriteLine($"[Error] Could not find music with name: {keyOfThePlaylist}");
+            }
+            return this;
+        }
     }
 
 }

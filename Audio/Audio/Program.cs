@@ -14,7 +14,7 @@ namespace Audio
             List<string> importedMusicList = musicData.ImportedMusic;
             Dictionary<string, List<string>> playlists = musicData.Playlists;
 
-            List<string> options = new List<string> { "Import music", "Play music", "Play playlist", "Create playlist", "Display playlists", "Exit" };
+            List<string> options = new List<string> { "Import music", "Play music", "Play playlist", "Create playlist", "Display playlists", "Delete music", "Delete playlist", "Exit" };
 
             while (true)
             {
@@ -87,6 +87,12 @@ namespace Audio
                         Console.ReadKey();
                         Console.Clear();
                         break;
+                    case "Delete music":
+                        DeleteMusic(importedMusicList, musicData);
+                        break;
+                    case "Delete playlist":
+                        DeletePlaylist(playlists, musicData);
+                        break;
                     case "Exit":
                         Console.WriteLine("Are you sure you want to exit? [y,n]");
                         string yesOrNo = Console.ReadLine();
@@ -100,6 +106,55 @@ namespace Audio
                         continue;
                 }
 
+            }
+        }
+
+        static void DeleteMusic(List<string> musicList, MusicData musicData)
+        {
+            var selectedMusic = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Choose music to delete")
+                    .PageSize(10)
+                    .MoreChoicesText("[grey](Move up and down to reveal more music)[/]")
+                    .AddChoices(musicList)
+            );
+
+            Console.WriteLine($"Are you sure you want to delete this music -> {selectedMusic}? [y,n]");
+            string yesOrNo = Console.ReadLine();
+            if (yesOrNo.ToLower() == "y")
+            {
+                musicData.DeleteMusic(selectedMusic);
+                Console.Clear();
+            }
+            else
+            {
+                Console.Clear();
+                return;
+            }
+        }
+
+        static void DeletePlaylist(Dictionary<string, List<string>> playlist, MusicData musicData)
+        {
+            DisplayPlaylists(playlist);
+            var selectedPlaylist = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Choose playlist to delete")
+                    .PageSize(10)
+                    .MoreChoicesText("[grey](Move up and down to reveal more playlists)[/]")
+                    .AddChoices(playlist.Select(key => key.Key))
+            );
+
+            Console.WriteLine($"Are you sure you want to delete this playlist -> {selectedPlaylist}? [y,n]");
+            string yesOrNo = Console.ReadLine();
+            if (yesOrNo.ToLower() == "y")
+            {
+                musicData.DeletePlaylist(selectedPlaylist);
+                Console.Clear();
+            }
+            else
+            {
+                Console.Clear();
+                return;
             }
         }
 
