@@ -35,9 +35,19 @@ namespace Audio
 
         public MusicData DeleteMusic(string nameOfTheMusic)
         {
+
             if (ImportedMusic.Contains(nameOfTheMusic))
             {
                 ImportedMusic.Remove(nameOfTheMusic);
+                foreach (var playlist in Playlists.Values)
+                {
+                    var keyToRemove = Playlists.FirstOrDefault(kv => kv.Value.Contains(nameOfTheMusic)).Key;
+
+                    if (keyToRemove != null)
+                    {
+                        Playlists[keyToRemove].Remove(nameOfTheMusic);
+                    }
+                }
                 SaveToFile();
             }
             else
