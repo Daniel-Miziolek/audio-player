@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Spectre.Console;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Audio
@@ -33,8 +34,15 @@ namespace Audio
             return new MusicData();
         }
 
-        public MusicData DeleteMusic(string nameOfTheMusic)
+        public MusicData DeleteMusic()
         {
+            var nameOfTheMusic = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Choose music to delete")
+                    .PageSize(10)
+                    .MoreChoicesText("[grey](Move up and down to reveal more music)[/]")
+                    .AddChoices(ImportedMusic)
+            );
 
             if (ImportedMusic.Contains(nameOfTheMusic))
             {
@@ -57,8 +65,16 @@ namespace Audio
             return this;
         }
 
-        public MusicData DeletePlaylist(string keyOfThePlaylist)
+        public MusicData DeletePlaylist()
         {
+            var keyOfThePlaylist = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Choose playlist to delete")
+                    .PageSize(10)
+                    .MoreChoicesText("[grey](Move up and down to reveal more playlists)[/]")
+                    .AddChoices(Playlists.Select(key => key.Key))
+            );
+
             if (Playlists.Select(key => key.Key).Contains(keyOfThePlaylist))
             {
                 Playlists.Remove(keyOfThePlaylist);

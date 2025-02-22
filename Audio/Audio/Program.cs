@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Audio;
 using NAudio.Wave;
 using Spectre.Console;
@@ -11,35 +12,32 @@ namespace Audio
         {
             MusicData musicData = MusicData.LoadFromFile();
 
-            List<string> importedMusicList = musicData.ImportedMusic;
-            Dictionary<string, List<string>> playlists = musicData.Playlists;
-
             List<string> options = new List<string> { "Import music", "Play music", "Play playlist", "Create playlist", "Display playlists", "Delete music", "Delete playlist", "Exit" };
 
             while (true)
             {
-                DisplayMusicList(importedMusicList, "Imported music");
+                DisplayMusicList(musicData.ImportedMusic, "Imported music");
 
                 string input = PromptWithSelection("Choose one of the options", options);
 
                 switch (input)
                 {
                     case "Import music":
-                        ImportMusic(importedMusicList);
+                        ImportMusic(musicData.ImportedMusic);
                         musicData.SaveToFile();
                         break;
                     case "Play music":
-                        if (importedMusicList.Count > 0)
+                        if (musicData.ImportedMusic.Count > 0)
                         {
                             var selectMusicToPlay = AnsiConsole.Prompt(
                                 new SelectionPrompt<string>()
                                     .Title("Choose music to play")
                                     .PageSize(10)
                                     .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
-                                    .AddChoices(importedMusicList.Select(Path.GetFileName))
+                                    .AddChoices(musicData.ImportedMusic.Select(Path.GetFileName))
                             );
-                            int index = importedMusicList.FindIndex(path => Path.GetFileName(path) == selectMusicToPlay);
-                            PlayMusic(importedMusicList, index, false);
+                            int index = musicData.ImportedMusic.FindIndex(path => Path.GetFileName(path) == selectMusicToPlay);
+                            PlayMusic(musicData.ImportedMusic, index, false);
                         }
                         else
                         {
@@ -49,16 +47,16 @@ namespace Audio
                         }
                         break;
                     case "Play playlist":
-                        if (playlists.Count > 0)
+                        if (musicData.Playlists.Count > 0)
                         {
                             var selectPlaylist = AnsiConsole.Prompt(
                                 new SelectionPrompt<string>()
                                     .Title("Choose playlist to play")
                                     .PageSize(10)
                                     .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
-                                    .AddChoices(playlists.Select(key => key.Key))
+                                    .AddChoices(musicData.Playlists.Select(key => key.Key))
                             );
-                            PlayPlaylist(playlists, selectPlaylist);
+                            PlayPlaylist(musicData.Playlists, selectPlaylist);
                         }
                         else
                         {
@@ -68,9 +66,9 @@ namespace Audio
                         }
                         break;
                     case "Create playlist":
-                        if (importedMusicList.Count > 0)
+                        if (musicData.ImportedMusic.Count > 0)
                         {
-                            CreatePlaylist(importedMusicList, playlists);
+                            CreatePlaylist(musicData.ImportedMusic, musicData.Playlists);
                             musicData.SaveToFile();
                         }
                         else
@@ -82,22 +80,39 @@ namespace Audio
                         break;
                     case "Display playlists":
                         Console.Clear();
-                        DisplayPlaylists(playlists);
+                        DisplayPlaylists(musicData.Playlists);
                         Console.WriteLine("Press any key to return to the menu...");
                         Console.ReadKey();
                         Console.Clear();
                         break;
                     case "Delete music":
-                        DeleteMusic(importedMusicList, musicData);
+                        if (musicData.ImportedMusic.Count > 0)
+                        {
+                            musicData.DeleteMusic();
+                        }
+                        else
+                        {
+                            Console.WriteLine("You haven't imported any music yet. Press any key to continue");
+                            Console.ReadKey();
+                        }
                         break;
                     case "Delete playlist":
-                        DeletePlaylist(playlists, musicData);
+                        if (musicData.Playlists.Count > 0)
+                        {
+                            musicData.DeletePlaylist();
+                            Console.Clear();
+                        }
+                        else
+                        {
+                            Console.WriteLine("You haven't created any playlist yet. Press any key to continue");
+                            Console.ReadKey();
+                        }
+                        Console.Clear();
                         break;
                     case "Exit":
-                        Console.WriteLine("Are you sure you want to exit? [y,n]");
-                        string yesOrNo = Console.ReadLine();
+                        bool x = AnsiConsole.Confirm("Are you sure you want to exit");
+                        if (x == true) return;
                         Console.Clear();
-                        if (yesOrNo.ToLower() == "y") return;
                         break;
                     default:
                         Console.WriteLine("Invalid choice. Press any key to try again");
@@ -106,55 +121,6 @@ namespace Audio
                         continue;
                 }
 
-            }
-        }
-
-        static void DeleteMusic(List<string> musicList, MusicData musicData)
-        {
-            var selectedMusic = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title("Choose music to delete")
-                    .PageSize(10)
-                    .MoreChoicesText("[grey](Move up and down to reveal more music)[/]")
-                    .AddChoices(musicList)
-            );
-
-            Console.WriteLine($"Are you sure you want to delete this music -> {selectedMusic}? [y,n]");
-            string yesOrNo = Console.ReadLine();
-            if (yesOrNo.ToLower() == "y")
-            {
-                musicData.DeleteMusic(selectedMusic);
-                Console.Clear();
-            }
-            else
-            {
-                Console.Clear();
-                return;
-            }
-        }
-
-        static void DeletePlaylist(Dictionary<string, List<string>> playlist, MusicData musicData)
-        {
-            DisplayPlaylists(playlist);
-            var selectedPlaylist = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title("Choose playlist to delete")
-                    .PageSize(10)
-                    .MoreChoicesText("[grey](Move up and down to reveal more playlists)[/]")
-                    .AddChoices(playlist.Select(key => key.Key))
-            );
-
-            Console.WriteLine($"Are you sure you want to delete this playlist -> {selectedPlaylist}? [y,n]");
-            string yesOrNo = Console.ReadLine();
-            if (yesOrNo.ToLower() == "y")
-            {
-                musicData.DeletePlaylist(selectedPlaylist);
-                Console.Clear();
-            }
-            else
-            {
-                Console.Clear();
-                return;
             }
         }
 
@@ -192,7 +158,6 @@ namespace Audio
                     .Padding(1, 0, 1, 0)
             );
         }
-
 
         static void PlayPlaylist(Dictionary<string, List<string>> playlists, string playlistName)
         {
