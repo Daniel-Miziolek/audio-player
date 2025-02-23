@@ -124,7 +124,7 @@ namespace Audio
             }
         }
 
-        static string PromptWithSelection(string title, IEnumerable<string> choices)
+        private static string PromptWithSelection(string title, IEnumerable<string> choices)
         {
             return AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
@@ -134,7 +134,7 @@ namespace Audio
             );
         }
 
-        static void DisplayMusicList(List<string> musicList, string header)
+        private static void DisplayMusicList(List<string> musicList, string header)
         {
             var table = new Table().Border(TableBorder.Heavy);
 
@@ -159,7 +159,7 @@ namespace Audio
             );
         }
 
-        static void PlayPlaylist(Dictionary<string, List<string>> playlists, string playlistName)
+        private static void PlayPlaylist(Dictionary<string, List<string>> playlists, string playlistName)
         {
             if (playlists.TryGetValue(playlistName, out List<string> playlistTracks))
             {
@@ -184,50 +184,63 @@ namespace Audio
             }
         }
 
-        static void CreatePlaylist(List<string> importedMusicList, Dictionary<string, List<string>> playlists)
+        private static void CreatePlaylist(List<string> importedMusicList, Dictionary<string, List<string>> playlists)
         {
-            Console.Write("Enter a name for the playlist: ");
-            string nameOfPlaylist = Console.ReadLine();
-
-            if (string.IsNullOrWhiteSpace(nameOfPlaylist) || playlists.ContainsKey(nameOfPlaylist))
+            if (importedMusicList.Count == 0)
             {
-                Console.WriteLine("Invalid or duplicate playlist name. Press any key to try again.");
+                AnsiConsole.MarkupLine("[red]No music imported yet. Please import music first.[/]");
                 Console.ReadKey();
                 Console.Clear();
                 return;
             }
 
-            List<string> musicToAdd = new List<string>();
-
-            while (true)
+            var playlistName = AnsiConsole.Ask<string>("Enter a name for the playlist:");
+            if (string.IsNullOrWhiteSpace(playlistName))
             {
-                var selectedMusic = AnsiConsole.Prompt(
-                    new SelectionPrompt<string>()
-                        .Title("Choose music to add to the playlist")
-                        .PageSize(10)
-                        .MoreChoicesText("[grey](Move up and down to reveal more music)[/]")
-                        .AddChoices(importedMusicList.Select(Path.GetFileName))
-                );
-
-                string fullPath = importedMusicList.FirstOrDefault(f => Path.GetFileName(f) == selectedMusic);
-                if (fullPath != null && !musicToAdd.Contains(fullPath))
-                {
-                    musicToAdd.Add(fullPath);
-                    AnsiConsole.MarkupLine($"[green]{selectedMusic} added to playlist {nameOfPlaylist}.[/]");
-                }
-
-                bool addMore = AnsiConsole.Confirm("Do you want to add more music?");
-                if (!addMore) break;
+                AnsiConsole.MarkupLine("[red]Playlist name cannot be empty. Please try again.[/]");
+                Console.ReadKey();
+                Console.Clear();
+                return;
             }
 
-            playlists[nameOfPlaylist] = musicToAdd;
+            if (playlists.ContainsKey(playlistName))
+            {
+                AnsiConsole.MarkupLine($"[red]A playlist with the name '{playlistName}' already exists. Please choose a different name.[/]");
+                Console.ReadKey();
+                Console.Clear();
+                return;
+            }
+
+            var selectedTracks = AnsiConsole.Prompt(
+                new MultiSelectionPrompt<string>()
+                    .Title("Select tracks to add to the playlist")
+                    .PageSize(10)
+                    .MoreChoicesText("[grey](Move up and down to reveal more tracks)[/]")
+                    .InstructionsText("[grey](Press [blue]<space>[/] to toggle a track, [green]<enter>[/] to accept)[/]")
+                    .AddChoices(importedMusicList.Select(Path.GetFileName))
+            );
+
+            if (selectedTracks.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]No tracks selected. Playlist creation canceled.[/]");
+                Console.ReadKey();
+                Console.Clear();
+                return;
+            }
+
+            var tracksToAdd = importedMusicList
+                .Where(path => selectedTracks.Contains(Path.GetFileName(path)))
+                .ToList();
+
+            playlists[playlistName] = tracksToAdd;
             new MusicData { Playlists = playlists }.SaveToFile();
-            Console.WriteLine($"Playlist '{nameOfPlaylist}' created successfully.");
+
+            AnsiConsole.MarkupLine($"[green]Playlist '{playlistName}' created successfully with {tracksToAdd.Count} tracks![/]");
             Console.ReadKey();
             Console.Clear();
         }
 
-        static void ImportMusic(List<string> importedMusicList)
+        private static void ImportMusic(List<string> importedMusicList)
         {
             string currentPath = ChooseDrive();
             Stack<string> pathHistory = new Stack<string>();
@@ -288,8 +301,7 @@ namespace Audio
             }
         }
 
-
-        static string ChooseDrive()
+        private static string ChooseDrive()
         {
             var drives = DriveInfo.GetDrives()
                 .Where(d => d.IsReady)
@@ -304,13 +316,13 @@ namespace Audio
             );
         }
 
-        static bool IsAudioFile(string path)
+        private static bool IsAudioFile(string path)
         {
             string[] allowedExtensions = { ".mp3", ".wav", ".flac", ".ogg" };
             return allowedExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
         }
 
-        static void DisplayPlaylists(Dictionary<string, List<string>> playlists)
+        private static void DisplayPlaylists(Dictionary<string, List<string>> playlists)
         {
             var table = new Table()
                 .Border(TableBorder.Rounded)
@@ -330,7 +342,7 @@ namespace Audio
             AnsiConsole.Write(table);
         }
 
-        static void ChangeVolume(WaveOutEvent outputDevice, bool increase)
+        private static void ChangeVolume(WaveOutEvent outputDevice, bool increase)
         {
             float minVolume = 0.0F;
             float maxVolume = 1.0F;
@@ -350,7 +362,7 @@ namespace Audio
             outputDevice.Volume = currentVolume;
         }
 
-        static void PlayMusic(List<string> importedMusicList, int index, bool isPlaylist)
+        private static void PlayMusic(List<string> importedMusicList, int index, bool isPlaylist)
         {
             TimeSpan accumulatedPauseTime = TimeSpan.Zero;
             DateTime pauseStartTime = DateTime.MinValue;
@@ -380,7 +392,7 @@ namespace Audio
                             Console.Clear();
                             Console.WriteLine($"Playing music: {selectedMusic}");
                             Console.WriteLine($"Current time: {elapsedTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
-                            Console.WriteLine("[E] Pause/Resume | [Y] Stop | [+/-] Volume");
+                            Console.WriteLine("[P] Pause/Resume | [S] Stop | [+/-] Volume");
                             Console.WriteLine($"Volume: {Math.Round(outputDevice.Volume * 100)}");
 
                             await Task.Delay(500);
@@ -398,37 +410,35 @@ namespace Audio
 
                         if (Console.KeyAvailable)
                         {
-                            var key = Console.ReadKey(true);
+                            var key = Console.ReadKey(true).Key;
 
-                            if (key.Key == ConsoleKey.E)
+                            switch (key)
                             {
-                                if (outputDevice.PlaybackState == PlaybackState.Playing)
-                                {
-                                    outputDevice.Pause();
-                                    pauseStartTime = DateTime.Now;
+                                case ConsoleKey.P:
+                                    if (outputDevice.PlaybackState == PlaybackState.Playing)
+                                    {
+                                        outputDevice.Pause();
+                                        pauseStartTime = DateTime.Now;
+                                        stopwatch.Stop();
+                                    }
+                                    else
+                                    {
+                                        outputDevice.Play();
+                                        stopwatch.Start();
+                                    }
+                                    break;
+                                case ConsoleKey.S:
+                                    outputDevice.Stop();
                                     stopwatch.Stop();
-                                }
-                                else
-                                {
-                                    outputDevice.Play();
-                                    stopwatch.Start();
-                                }
-                            }
-                            else if (key.Key == ConsoleKey.Y)
-                            {
-                                outputDevice.Stop();
-                                stopwatch.Stop();
-                                isPlaying = false;
-                                isStopped = true;
-                                break;
-                            }
-                            else if (key.Key == ConsoleKey.OemPlus)
-                            {
-                                ChangeVolume(outputDevice, true);
-                            }
-                            else if (key.Key == ConsoleKey.OemMinus)
-                            {
-                                ChangeVolume(outputDevice, false);
+                                    isPlaying = false;
+                                    isStopped = true;
+                                    break;
+                                case ConsoleKey.OemPlus:
+                                    ChangeVolume(outputDevice, true);
+                                    break;
+                                case ConsoleKey.OemMinus:
+                                    ChangeVolume(outputDevice, false);
+                                    break;
                             }
                         }
                     }
@@ -465,7 +475,5 @@ namespace Audio
 
             Console.Clear();
         }
-
-
     }
 }
