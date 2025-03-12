@@ -95,6 +95,7 @@ namespace Audio
                             Console.WriteLine("You haven't imported any music yet. Press any key to continue");
                             Console.ReadKey();
                         }
+                        Console.Clear();
                         break;
                     case "Delete playlist":
                         if (musicData.Playlists.Count > 0)
