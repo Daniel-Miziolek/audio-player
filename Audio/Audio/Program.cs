@@ -298,6 +298,9 @@ namespace Audio
                 catch (Exception ex)
                 {
                     AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
+                    Console.ReadKey();
+                    Console.Clear();
+                    return;
                 }
             }
         }
