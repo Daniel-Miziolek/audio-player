@@ -12,7 +12,7 @@ namespace Audio
         {
             MusicData musicData = MusicData.LoadFromFile();
 
-            List<string> options = new List<string> { "Import music", "Play music", "Play playlist", "Create playlist", "Display playlists", "Delete music", "Delete playlist", "Exit" };
+            List<string> options = ["Import music", "Play music", "Play playlist", "Create playlist", "Display playlists", "Delete music", "Delete playlist", "Exit"];
 
             while (true)
             {
@@ -255,6 +255,7 @@ namespace Audio
                         .ToList();
 
                     entries.Insert(0, "Go back");
+                    entries.Insert(1, "Exit");
 
                     var selectedMusicOrFolder = AnsiConsole.Prompt(
                         new SelectionPrompt<string>()
@@ -293,6 +294,12 @@ namespace Audio
                             Console.Clear();
                             return;
                         }
+                    }
+                    else if (selectedMusicOrFolder == "Exit")
+                    {
+                        pathHistory.Clear();
+                        Console.Clear();
+                        return;
                     }
                 }
                 catch (Exception ex)
