@@ -8,6 +8,7 @@ namespace Audio
 {
     class Program
     {
+
         static async Task Main(string[] args)
         {
             MusicData musicData = MusicData.LoadFromFile();
@@ -16,6 +17,11 @@ namespace Audio
 
             while (true)
             {
+                AnsiConsole.Write(
+                    new FigletText("Audio Player")
+                        .LeftJustified()
+                        .Color(Color.SkyBlue1));
+
                 DisplayMusicList(musicData.ImportedMusic, "Imported music");
 
                 string input = PromptWithSelection("Choose one of the options", options);
@@ -141,10 +147,10 @@ namespace Audio
 
             if (musicList.Count > 0)
             {
-                table.AddColumn("[yellow]Index[/]").AddColumn("[yellow]Music Name[/]");
+                table.AddColumn("[SkyBlue1]Index[/]").AddColumn("[SkyBlue1]Music Name[/]");
                 foreach (var (audio, index) in musicList.Select((audio, index) => (audio, index)))
                 {
-                    table.AddRow($"[blue]{index}[/]", $"[green]{Path.GetFileName(audio)}[/]");
+                    table.AddRow($"[blue]{index}[/]", $"[white]{Path.GetFileName(audio)}[/]");
                 }
             }
             else
@@ -154,7 +160,7 @@ namespace Audio
 
             AnsiConsole.Write(
                 new Panel(table)
-                    .Header($"[yellow]{header}[/]")
+                    .Header($"[SkyBlue1]{header}[/]")
                     .Border(BoxBorder.Heavy)
                     .Padding(1, 0, 1, 0)
             );
@@ -385,10 +391,25 @@ namespace Audio
                 Console.Clear();
                 Console.WriteLine($"Playing music: {selectedMusic}");
 
-                using (var audioFile = new AudioFileReader(importedMusicList[index]))
-                using (var outputDevice = new WaveOutEvent())
+                AudioFileReader audioFile = null;
+                WaveOutEvent outputDevice = null;
+
+                try
                 {
+                    audioFile = new AudioFileReader(importedMusicList[index]);
+                    outputDevice = new WaveOutEvent();
                     outputDevice.Init(audioFile);
+
+                    bool naturalEnd = false;
+
+                    outputDevice.PlaybackStopped += (sender, e) =>
+                    {
+                        if (audioFile != null && !isStopped)
+                        {
+                            naturalEnd = audioFile.CurrentTime >= audioFile.TotalTime - TimeSpan.FromMilliseconds(100);
+                        }
+                    };
+
                     outputDevice.Play();
 
                     TimeSpan totalTime = audioFile.TotalTime;
@@ -398,12 +419,10 @@ namespace Audio
                     {
                         while (outputDevice.PlaybackState != PlaybackState.Stopped)
                         {
-                            TimeSpan elapsedTime = stopwatch.Elapsed + accumulatedPauseTime;
-
                             Console.Clear();
                             Console.WriteLine($"Playing music: {selectedMusic}");
-                            Console.WriteLine($"Current time: {elapsedTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
-                            Console.WriteLine("[P] Pause/Resume | [S] Stop | [+/-] Volume");
+                            Console.WriteLine($"Current time: {audioFile.CurrentTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
+                            Console.WriteLine("Controls: [P] Pause | [S] Stop | [F] +10s | [R] -10s | [+/-] Volume");
                             Console.WriteLine($"Volume: {Math.Round(outputDevice.Volume * 100)}");
 
                             await Task.Delay(500);
@@ -413,9 +432,10 @@ namespace Audio
                     bool isPlaying = true;
                     while (isPlaying)
                     {
-                        if (stopwatch.Elapsed + accumulatedPauseTime >= totalTime)
+                        if (audioFile.CurrentTime >= totalTime - TimeSpan.FromMilliseconds(100))
                         {
                             isPlaying = false;
+                            naturalEnd = true;
                             break;
                         }
 
@@ -450,31 +470,42 @@ namespace Audio
                                 case ConsoleKey.OemMinus:
                                     ChangeVolume(outputDevice, false);
                                     break;
+                                case ConsoleKey.F:
+                                    if (audioFile.CurrentTime + TimeSpan.FromSeconds(10) < audioFile.TotalTime)
+                                    {
+                                        audioFile.CurrentTime += TimeSpan.FromSeconds(10);
+                                    }
+                                    break;
+                                case ConsoleKey.R:
+                                    if (audioFile.CurrentTime - TimeSpan.FromSeconds(10) > TimeSpan.FromSeconds(0))
+                                    {
+                                        audioFile.CurrentTime -= TimeSpan.FromSeconds(10);
+                                    }
+                                    break;
                             }
                         }
                     }
 
                     outputDevice.Stop();
-                }
 
-                if (isPlaylist)
-                {
-                    index++;
-                }
-                else
-                {
-                    if (isStopped)
+                    if (isPlaylist)
                     {
-                        Console.WriteLine("Music has been stopped. Press any key to return to the main menu...");
-                        Console.ReadKey();
-                        break;
+                        index++;
+                        isStopped = false;
                     }
                     else
                     {
-                        Console.WriteLine("Music has ended. Press any key to return to the main menu...");
+                        Console.WriteLine(isStopped
+                            ? "Music has been stopped. Press any key to return to the main menu..."
+                            : "Music has ended. Press any key to return to the main menu...");
                         Console.ReadKey();
                         break;
                     }
+                }
+                finally
+                {
+                    outputDevice?.Dispose();
+                    audioFile?.Dispose();
                 }
             }
 
