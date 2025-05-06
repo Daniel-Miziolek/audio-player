@@ -49,12 +49,7 @@ namespace Audio
                 ImportedMusic.Remove(nameOfTheMusic);
                 foreach (var playlist in Playlists.Values)
                 {
-                    var keyToRemove = Playlists.FirstOrDefault(kv => kv.Value.Contains(nameOfTheMusic)).Key;
-
-                    if (keyToRemove != null)
-                    {
-                        Playlists[keyToRemove].Remove(nameOfTheMusic);
-                    }
+                    playlist.Remove(nameOfTheMusic);
                 }
                 SaveToFile();
             }
