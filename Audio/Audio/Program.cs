@@ -384,6 +384,7 @@ namespace Audio
             TimeSpan accumulatedPauseTime = TimeSpan.Zero;
             DateTime pauseStartTime = DateTime.MinValue;
             bool isStopped = false;
+            bool isNext = false;
 
             while (index < importedMusicList.Count)
             {
@@ -417,15 +418,31 @@ namespace Audio
 
                     _ = Task.Run(async () =>
                     {
-                        while (outputDevice.PlaybackState != PlaybackState.Stopped)
+                        if (isPlaylist == true)
                         {
-                            Console.Clear();
-                            Console.WriteLine($"Playing music: {selectedMusic}");
-                            Console.WriteLine($"Current time: {audioFile.CurrentTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
-                            Console.WriteLine("Controls: [P] Pause | [S] Stop | [F] +10s | [R] -10s | [+/-] Volume");
-                            Console.WriteLine($"Volume: {Math.Round(outputDevice.Volume * 100)}");
+                            while (outputDevice.PlaybackState != PlaybackState.Stopped)
+                            {
+                                Console.Clear();
+                                Console.WriteLine($"Playing music: {selectedMusic}");
+                                Console.WriteLine($"Current time: {audioFile.CurrentTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
+                                Console.WriteLine("Controls: [P] Pause | [S] Stop | [N] Next | [F] +10s | [R] -10s | [+/-] Volume");
+                                Console.WriteLine($"Volume: {Math.Round(outputDevice.Volume * 100)}");
 
-                            await Task.Delay(500);
+                                await Task.Delay(500);
+                            }
+                        }
+                        else
+                        {
+                            while (outputDevice.PlaybackState != PlaybackState.Stopped)
+                            {
+                                Console.Clear();
+                                Console.WriteLine($"Playing music: {selectedMusic}");
+                                Console.WriteLine($"Current time: {audioFile.CurrentTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
+                                Console.WriteLine("Controls: [P] Pause | [S] Stop | [F] +10s | [R] -10s | [+/-] Volume");
+                                Console.WriteLine($"Volume: {Math.Round(outputDevice.Volume * 100)}");
+
+                                await Task.Delay(500);
+                            }
                         }
                     });
 
@@ -482,16 +499,33 @@ namespace Audio
                                         audioFile.CurrentTime -= TimeSpan.FromSeconds(10);
                                     }
                                     break;
+                                case ConsoleKey.N:
+                                    outputDevice.Stop();
+                                    stopwatch.Stop();
+                                    isPlaying = false;
+                                    isStopped = true;
+                                    isNext = true;
+                                    break;
                             }
                         }
                     }
 
                     outputDevice.Stop();
-
                     if (isPlaylist)
                     {
-                        index++;
-                        isStopped = false;
+                        if (isNext)
+                        {
+                            index++;
+                            isStopped = false;
+                        }
+                        else
+                        {
+                            Console.WriteLine(isStopped
+                            ? "Playlist has been stopped. Press any key to return to the main menu..."
+                            : "Playlist has ended. Press any key to return to the main menu...");
+                            Console.ReadKey();
+                            break;
+                        }
                     }
                     else
                     {
