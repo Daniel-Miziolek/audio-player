@@ -1,6 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using Audio;
 using NAudio.Wave;
 using Spectre.Console;
 
@@ -13,7 +11,15 @@ namespace Audio
         {
             MusicData musicData = MusicData.LoadFromFile();
 
-            List<string> options = ["Import music", "Play music", "Play playlist", "Create playlist", "Display playlists", "Delete music", "Delete playlist", "Exit"];
+            List<string> options = ["Import music",
+                "Play music",
+                "Play playlist",
+                "Create playlist",
+                "Display playlists",
+                "Edit playlist",
+                "Delete music",
+                "Delete playlist",
+                "Exit"];
 
             while (true)
             {
@@ -91,6 +97,18 @@ namespace Audio
                         Console.ReadKey();
                         Console.Clear();
                         break;
+                    case "Edit playlist":
+                        if (musicData.Playlists.Count > 0)
+                        {
+                            musicData.EditPlaylist();
+                        }
+                        else
+                        {
+                            Console.WriteLine("You haven't created any playlists yet. Press any key to continue");
+                            Console.ReadKey();
+                        }
+                        Console.Clear();
+                        break;
                     case "Delete music":
                         if (musicData.ImportedMusic.Count > 0)
                         {
@@ -107,7 +125,6 @@ namespace Audio
                         if (musicData.Playlists.Count > 0)
                         {
                             musicData.DeletePlaylist();
-                            Console.Clear();
                         }
                         else
                         {
@@ -127,8 +144,8 @@ namespace Audio
                         Console.Clear();
                         continue;
                 }
-
             }
+
         }
 
         private static string PromptWithSelection(string title, IEnumerable<string> choices)
