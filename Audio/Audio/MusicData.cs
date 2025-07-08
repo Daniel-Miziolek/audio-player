@@ -33,7 +33,155 @@ namespace Audio
             return new MusicData();
         }
 
-        public MusicData DeleteMusic()
+        public void ImportMusic()
+        {
+            string currentPath = ChooseDrive();
+            Stack<string> pathHistory = new Stack<string>();
+
+            while (true)
+            {
+                try
+                {
+                    var entries = Directory.GetFileSystemEntries(currentPath)
+                        .Where(entry => Directory.Exists(entry) || IsAudioFile(entry))
+                        .ToList();
+
+                    entries.Insert(0, "Go back");
+                    entries.Insert(1, "Exit");
+
+                    var selectedMusicOrFolder = AnsiConsole.Prompt(
+                        new SelectionPrompt<string>()
+                            .Title($"Browsing: [blue]{currentPath}[/]")
+                            .PageSize(10)
+                            .MoreChoicesText("[grey](Move up and down to reveal more folders and files)[/]")
+                            .AddChoices(entries)
+                    );
+
+                    if (Directory.Exists(selectedMusicOrFolder))
+                    {
+                        pathHistory.Push(currentPath);
+                        currentPath = selectedMusicOrFolder;
+                    }
+                    else if (File.Exists(selectedMusicOrFolder))
+                    {
+                        if (!ImportedMusic.Contains(selectedMusicOrFolder))
+                        {
+                            ImportedMusic.Add(selectedMusicOrFolder);
+                            AnsiConsole.MarkupLine($"[green]Added: {Path.GetFileName(selectedMusicOrFolder)}[/]");
+                            SaveToFile();
+                        }
+                        else
+                        {
+                            AnsiConsole.MarkupLine($"[red]This music has already been imported: {Path.GetFileName(selectedMusicOrFolder)}[/]");
+                        }
+                    }
+                    else if (selectedMusicOrFolder == "Go back")
+                    {
+                        if (pathHistory.Count > 0)
+                        {
+                            currentPath = pathHistory.Pop();
+                        }
+                        else
+                        {
+                            Console.Clear();
+                            return;
+                        }
+                    }
+                    else if (selectedMusicOrFolder == "Exit")
+                    {
+                        pathHistory.Clear();
+                        Console.Clear();
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
+                    Console.ReadKey();
+                    Console.Clear();
+                    return;
+                }
+            }
+        }
+
+        private string ChooseDrive()
+        {
+            var drives = DriveInfo.GetDrives()
+                .Where(d => d.IsReady)
+                .Select(d => d.Name)
+                .ToList();
+
+            return AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Choose a drive to start browsing:")
+                    .PageSize(10)
+                    .AddChoices(drives)
+            );
+        }
+
+        private bool IsAudioFile(string path)
+        {
+            string[] allowedExtensions = { ".mp3", ".wav", ".flac", ".ogg" };
+            return allowedExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+        }
+
+        public void CreatePlaylist()
+        {
+            if (ImportedMusic.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[red]No music imported yet. Please import music first.[/]");
+                Console.ReadKey();
+                Console.Clear();
+                return;
+            }
+
+            var playlistName = AnsiConsole.Ask<string>("Enter a name for the playlist:");
+            if (string.IsNullOrWhiteSpace(playlistName))
+            {
+                AnsiConsole.MarkupLine("[red]Playlist name cannot be empty. Please try again.[/]");
+                Console.ReadKey();
+                Console.Clear();
+                return;
+            }
+
+            if (Playlists.ContainsKey(playlistName))
+            {
+                AnsiConsole.MarkupLine($"[red]A playlist with the name '{playlistName}' already exists. Please choose a different name.[/]");
+                Console.ReadKey();
+                Console.Clear();
+                return;
+            }
+
+            var selectedTracks = AnsiConsole.Prompt(
+                new MultiSelectionPrompt<string>()
+                    .Title("Select tracks to add to the playlist")
+                    .PageSize(10)
+                    .MoreChoicesText("[grey](Move up and down to reveal more tracks)[/]")
+                    .InstructionsText("[grey](Press [blue]<space>[/] to toggle a track, [green]<enter>[/] to accept)[/]")
+                    .AddChoices(ImportedMusic.Select(Path.GetFileName))
+            );
+
+            if (selectedTracks.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]No tracks selected. Playlist creation canceled.[/]");
+                Console.ReadKey();
+                Console.Clear();
+                return;
+            }
+
+            var tracksToAdd = ImportedMusic
+                .Where(path => selectedTracks.Contains(Path.GetFileName(path)))
+                .ToList();
+
+            Playlists[playlistName] = tracksToAdd;
+            SaveToFile();
+
+            AnsiConsole.MarkupLine($"[green]Playlist '{playlistName}' created successfully with {tracksToAdd.Count} tracks![/]");
+            Console.ReadKey();
+            Console.Clear();
+        }
+
+        public void DeleteMusic()
         {
             var nameOfTheMusic = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
@@ -56,10 +204,9 @@ namespace Audio
             {
                 Console.WriteLine($"[Error] Could not find music with name: {nameOfTheMusic}");
             }
-            return this;
         }
 
-        public MusicData DeletePlaylist()
+        public void DeletePlaylist()
         {
             var keyOfThePlaylist = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
@@ -78,15 +225,14 @@ namespace Audio
             {
                 Console.WriteLine($"[Error] Could not find playlist with name: {keyOfThePlaylist}");
             }
-            return this;
         }
 
-        public MusicData EditPlaylist()
+        public void EditPlaylist()
         {
             if (Playlists.Count == 0)
             {
                 Console.WriteLine("No playlists available to edit.");
-                return this;
+                return;
             }
 
             var playlistName = AnsiConsole.Prompt(
@@ -104,7 +250,7 @@ namespace Audio
 
             if (action == "Cancel")
             {
-                return this;
+                return;
             }
 
             if (action == "Add tracks")
@@ -117,7 +263,7 @@ namespace Audio
                 if (availableTracks.Count == 0)
                 {
                     Console.WriteLine("No tracks available to add to this playlist.");
-                    return this;
+                    return;
                 }
 
                 var tracksToAdd = AnsiConsole.Prompt(
@@ -146,7 +292,7 @@ namespace Audio
                 if (Playlists[playlistName].Count == 0)
                 {
                     Console.WriteLine("This playlist is empty. Nothing to remove.");
-                    return this;
+                    return;
                 }
 
                 var tracksToRemove = AnsiConsole.Prompt(
@@ -166,8 +312,6 @@ namespace Audio
                     Console.WriteLine($"Removed {tracksToRemove.Count} tracks from playlist '{playlistName}'.");
                 }
             }
-
-            return this;
         }
     }
 }
