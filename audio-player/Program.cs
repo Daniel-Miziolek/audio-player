@@ -1,21 +1,9 @@
-﻿using System.Diagnostics;
-using NAudio.Wave;
-using Spectre.Console;
-using System.Text.Json;
+﻿using Spectre.Console;
 
 namespace Audio
 {
     class Program
-    {
-        private static string PromptWithSelection(string title, IEnumerable<string> choices)
-        {
-            return AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title(title)
-                    .PageSize(10)
-                    .AddChoices(choices)
-            );
-        }
+    {        
         static async Task Main(string[] args)
         {
             MusicData musicData = MusicData.LoadFromFile();
@@ -152,6 +140,16 @@ namespace Audio
                         continue;
                 }
             }
+        }
+
+        private static string PromptWithSelection(string title, IEnumerable<string> choices)
+        {
+            return AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title(title)
+                    .PageSize(10)
+                    .AddChoices(choices)
+            );
         }
     }
 }

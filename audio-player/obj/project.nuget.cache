@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "1MFyy0VbgRbjgAmBzP3SbopBadKi8CP5vTbQoLincE8dssEt0da3IEN9bs5adxydZ/ka0X68qOEQFifRJ44Q6w==",
+  "dgSpecHash": "JLNi8z+JSpOCiTylJQNu4xDfXYwoGxRo+j657H6+YcJ5ZrgXCap9sNWAlcTn5NJrr9qBPc1mOCLDHUQH+YsphQ==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Daniel\\Desktop\\c#\\audio-player\\audio-player\\audio-player.csproj",
+  "projectFilePath": "C:\\Users\\Daniel\\Desktop\\c#\\toDoList\\audio-player\\audio-player\\audio-player.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Daniel\\.nuget\\packages\\microsoft.netcore.platforms\\3.1.0\\microsoft.netcore.platforms.3.1.0.nupkg.sha512",
     "C:\\Users\\Daniel\\.nuget\\packages\\microsoft.win32.registry\\4.7.0\\microsoft.win32.registry.4.7.0.nupkg.sha512",
