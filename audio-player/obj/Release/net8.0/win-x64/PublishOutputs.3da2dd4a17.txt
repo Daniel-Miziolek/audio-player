@@ -1,2 +1,0 @@
-C:\Users\Daniel\Desktop\c#\audio-player\audio-player\bin\Release\net8.0\win-x64\publish\audio-player.pdb
-C:\Users\Daniel\Desktop\c#\audio-player\audio-player\bin\Release\net8.0\win-x64\publish\audio-player.exe
