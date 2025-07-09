@@ -1,4 +1,5 @@
-﻿using Spectre.Console;
+﻿using audio_player;
+using Spectre.Console;
 
 namespace Audio
 {
@@ -25,7 +26,7 @@ namespace Audio
                         .LeftJustified()
                         .Color(Color.SkyBlue1));
 
-                Music.DisplayMusicList(musicData.ImportedMusic, "Imported music");
+                Display.DisplayMusicList(musicData.ImportedMusic, "Imported music");
 
                 string input = PromptWithSelection("Choose one of the options", options);
 
@@ -87,7 +88,7 @@ namespace Audio
                         break;
                     case "Display playlists":
                         Console.Clear();
-                        Music.DisplayPlaylists(musicData.Playlists);
+                        Display.DisplayPlaylists(musicData.Playlists);
                         Console.WriteLine("Press any key to return to the menu...");
                         Console.ReadKey();
                         Console.Clear();
