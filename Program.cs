@@ -87,7 +87,7 @@ namespace Audio
                         }
                         break;
                     case "Display playlists":
-                        Console.Clear();
+                        // Console.Clear();
                         Display.DisplayPlaylists(musicData.Playlists);
                         Console.WriteLine("Press any key to return to the menu...");
                         Console.ReadKey();

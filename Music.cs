@@ -1,5 +1,4 @@
 ﻿using NAudio.Wave;
-using Spectre.Console;
 using System.Diagnostics;
 
 namespace Audio
@@ -88,33 +87,21 @@ namespace Audio
                     TimeSpan totalTime = audioFile.TotalTime;
                     Stopwatch stopwatch = Stopwatch.StartNew();
 
+                    string controls = isPlaylist
+                        ? "Controls: [P] Pause | [S] Stop | [N] Next | [F] +10s | [R] -10s | [+/-] Volume"
+                        : "Controls: [P] Pause | [S] Stop | [F] +10s | [R] -10s | [+/-] Volume";
+
                     _ = Task.Run(async () =>
                     {
-                        if (isPlaylist == true)
+                        while (outputDevice.PlaybackState != PlaybackState.Stopped)
                         {
-                            while (outputDevice.PlaybackState != PlaybackState.Stopped)
-                            {
-                                Console.Clear();
-                                Console.WriteLine($"Playing music: {selectedMusic}");
-                                Console.WriteLine($"Current time: {audioFile.CurrentTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
-                                Console.WriteLine("Controls: [P] Pause | [S] Stop | [N] Next | [F] +10s | [R] -10s | [+/-] Volume");
-                                Console.WriteLine($"Volume: {Math.Round(outputDevice.Volume * 100)}");
+                            Console.Clear();
+                            Console.WriteLine($"Playing music: {selectedMusic}");
+                            Console.WriteLine($"Current time: {audioFile.CurrentTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
+                            Console.WriteLine(controls);
+                            Console.WriteLine($"Volume: {Math.Round(outputDevice.Volume * 100)}");
 
-                                await Task.Delay(500);
-                            }
-                        }
-                        else
-                        {
-                            while (outputDevice.PlaybackState != PlaybackState.Stopped)
-                            {
-                                Console.Clear();
-                                Console.WriteLine($"Playing music: {selectedMusic}");
-                                Console.WriteLine($"Current time: {audioFile.CurrentTime:hh\\:mm\\:ss} / Total time: {totalTime:hh\\:mm\\:ss}");
-                                Console.WriteLine("Controls: [P] Pause | [S] Stop | [F] +10s | [R] -10s | [+/-] Volume");
-                                Console.WriteLine($"Volume: {Math.Round(outputDevice.Volume * 100)}");
-
-                                await Task.Delay(500);
-                            }
+                            await Task.Delay(500);
                         }
                     });
 
