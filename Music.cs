@@ -63,8 +63,8 @@ namespace Audio
                 Console.Clear();
                 Console.WriteLine($"Playing music: {selectedMusic}");
 
-                AudioFileReader audioFile = null;
-                WaveOutEvent outputDevice = null;
+                AudioFileReader? audioFile = null;
+                WaveOutEvent? outputDevice = null;
 
                 try
                 {
@@ -137,6 +137,10 @@ namespace Audio
                                 case ConsoleKey.S:
                                     outputDevice.Stop();
                                     stopwatch.Stop();
+                                    if (isNext)
+                                    {
+                                        isNext = false;
+                                    }                                    
                                     isPlaying = false;
                                     isStopped = true;
                                     break;
